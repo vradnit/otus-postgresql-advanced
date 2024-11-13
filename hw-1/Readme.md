@@ -131,7 +131,7 @@ COMMIT
 ```
 
 ## **Скрин read_committed**
-![read_committed](/images/read_committed.png "read_committed")
+![read_committed](images/read_committed.png "read_committed")
 
 ## **Скрин repeatable_read**
-![repeatable_read](/images/repeatable_read.png "repeatable_read")
+![repeatable_read](images/repeatable_read.png "repeatable_read")
