@@ -14,7 +14,7 @@
 
 ## **Выполнение ДЗ**
 
-### **Скачиваем и устанавливаем утилиту _yc_ **
+### **Скачиваем и устанавливаем утилиту _yc_**
 ```
 [root@test2 hw-3]# curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
 Downloading yc 0.140.0
