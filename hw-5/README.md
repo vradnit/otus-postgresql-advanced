@@ -596,7 +596,7 @@ data_directory = '/var/lib/postgresql/15/main'		# use data in another directory
 data_directory = '/mnt/data/15/main'
 ```
 
-### **Пробуем стартовать postgres, на этот рах успех**
+### **Пробуем стартовать postgres, на этот раз успех**
 ```
 yc-user@db1:~$ sudo -u postgres pg_ctlcluster 15 main start
 Warning: the cluster will not be running as a systemd service. Consider using systemctl:
