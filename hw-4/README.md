@@ -22,7 +22,8 @@ Terraform v1.9.8
 
   Используя доку и примеры:
 ```
-https://github.com/comol/YCMDBScripts/blob/master/Terraform/ProdPostgres/main.tf
+https://github.com/comol/YCMDBScripts/blob/master/Terraform/ProdPostgres/
+https://github.com/yandex-cloud-examples/yc-postgresql-create-ro-dbuser
 https://habr.com/ru/companies/nixys/articles/721404/
 ```
   Подготавливаем конфиги для terraform
@@ -305,7 +306,7 @@ Note: You didn't use the -out option to save this plan, so Terraform can't guara
 ```
 
 
-### Запускаем создаение postgres-managed кластера
+### Запускаем создание postgres-managed кластера
 ```
 [root@test2 hw-4]# terraform apply
 
