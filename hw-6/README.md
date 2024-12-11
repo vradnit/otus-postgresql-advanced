@@ -671,6 +671,7 @@ postgres=#
 ```
 
 ### **Запускаем создание бэкапа и проверяем что он создался**
+```
 postgres@pgsql2:~$ pg_probackup backup -B /data/pg_probackup/otus --instance=replica -b FULL --stream --remote-host=192.168.60.52 --remote-user=postgres -U backup -d backupdb
 INFO: Backup start, pg_probackup version: 2.5.15, instance: replica, backup ID: SOBNA2, backup mode: FULL, wal mode: STREAM, remote: true, compress-algorithm: none, compress-level: 1
 WARNING: This PostgreSQL instance was initialized without data block checksums. pg_probackup have no way to detect data block corruption without them. Reinitialize PGDATA with option '--data-checksums'.
@@ -692,7 +693,6 @@ INFO: Validating backup SOBNA2
 INFO: Backup SOBNA2 data files are valid
 INFO: Backup SOBNA2 resident size: 158MB
 INFO: Backup SOBNA2 completed
-
 
 postgres@pgsql2:~$ pg_probackup show -B /data/pg_probackup/otus
 
