@@ -49,7 +49,7 @@ v4_cidr_blocks:
 +----------------------+-------------+----------------------+----------------+---------------+-----------------+
 ```
 **Создаем VM**  
-В качесте образа выбираем **almalinux-8**
+**В качесте образа выбираем almalinux-8**
 ```
 [root@test2 hw-8]# yc compute instance create --name db1 --hostname db1 --cores 4 --memory 8 --create-boot-disk size=10G,type=network-hdd,image-folder-id=standard-images,image-family=almalinux-8 --network-interface subnet-name=otus-subnet,nat-ip-version=ipv4 --ssh-key /home/voronov/.ssh/id_rsa.pub
 done (45s)
@@ -95,7 +95,7 @@ hardware_generation:
   legacy_features:
     pci_topology: PCI_TOPOLOGY_V1
 ```
-**Создаем и подключаем доаолнительный ssd диск**
+**Создаем и подключаем дополнительный ssd диск**
 ```
 [root@test2 hw-8]# yc compute disk create --name data --size 10G --type=network-ssd --description "data disk" 
 done (11s)
@@ -199,7 +199,7 @@ postgresql16-16.6-1PGDG.rhel8.x86_64
 postgresql16-server-16.6-1PGDG.rhel8.x86_64
 ```
 
-  **Создаем выделенный раздел для БД и монтируем в созданные ранее диск:**
+  **Создаем выделенный раздел для БД и монтируем в него диск ssd:**
 ```
 [root@db1 yc-user]# mkdir -p /data/pg
 
@@ -714,4 +714,5 @@ done (3s)
 |SELECT abalance FROM pgbench_accounts WHERE aid =   | 0.01       | 0.01       |
 |INSERT INTO pgbench_history (tid, bid, aid, delta,  | 0.01       | 0.01       |
 
-**В итоге удалось улучшить результаты тестов примерно в 2..3 раза**
+**В итоге, тесты в оптимизированной конфигурации показали результаты примерно в 2..3 раза  
+лучше в ставнении с дефолтной конфигурацией**
