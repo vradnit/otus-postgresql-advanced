@@ -18,7 +18,7 @@
 ## **Выполнение ДЗ**
 
 ### **Создаем VM**
-
+**Создаем сетевые ресурсы**
 ```
 [root@test2 hw-8]# yc vpc network create --name "otus-net" --description "otus-net"
 id: enp7vepl760r9qrp4ti2
@@ -47,8 +47,10 @@ v4_cidr_blocks:
 +----------------------+-------------+----------------------+----------------+---------------+-----------------+
 | e9bimdev5fbn811d5khc | otus-subnet | enp7vepl760r9qrp4ti2 |                | ru-central1-a | [10.95.98.0/24] |
 +----------------------+-------------+----------------------+----------------+---------------+-----------------+
-
-
+```
+**Создаем VM**
+В качесте образа выбираем **almalinux-8**
+```
 [root@test2 hw-8]# yc compute instance create --name db1 --hostname db1 --cores 4 --memory 8 --create-boot-disk size=10G,type=network-hdd,image-folder-id=standard-images,image-family=almalinux-8 --network-interface subnet-name=otus-subnet,nat-ip-version=ipv4 --ssh-key /home/voronov/.ssh/id_rsa.pub
 done (45s)
 id: fhm2nb2run9r2abfc1rb
@@ -92,9 +94,9 @@ placement_policy: {}
 hardware_generation:
   legacy_features:
     pci_topology: PCI_TOPOLOGY_V1
-
-
-
+```
+**Создаем и подключаем доаолнительный ssd диск**
+```
 [root@test2 hw-8]# yc compute disk create --name data --size 10G --type=network-ssd --description "data disk" 
 done (11s)
 id: fhmbdk0oqlh742ls4hml
@@ -183,7 +185,7 @@ hardware_generation:
 
 ### **Настраиваем ОС**
 
-  Устанавливаем postgresql
+**Устанавливаем postgresql**
 ```
 [root@db1 yc-user]# dnf update -y
 [root@db1 yc-user]# dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
@@ -197,7 +199,7 @@ postgresql16-16.6-1PGDG.rhel8.x86_64
 postgresql16-server-16.6-1PGDG.rhel8.x86_64
 ```
 
-  Создаем выделенный раздел для БД и монтируем в созданные ранее диск:
+  **Создаем выделенный раздел для БД и монтируем в созданные ранее диск:**
 ```
 [root@db1 yc-user]# mkdir -p /data/pg
 
@@ -240,7 +242,7 @@ mount: (hint) your fstab has been modified, but systemd still uses
 [root@db1 yc-user]# chown postgres:postgres /data/pg/
 ```
 
-  Изменяем PGDATA в systemd юните:
+**Изменяем PGDATA в systemd юните:**
 ```
 [root@db1 yc-user]# vi /usr/lib/systemd/system/postgresql-16.service
 [root@db1 yc-user]# grep 'Environment=PGDATA' /usr/lib/systemd/system/postgresql-16.service
@@ -249,13 +251,13 @@ Environment=PGDATA=/data/pg/
 
 [root@db1 yc-user]# systemctl daemon-reload
 ```
-  Инициализируем БД
+**Инициализируем БД**
 ```
 [root@db1 yc-user]# /usr/pgsql-16/bin/postgresql-16-setup initdb
 Initializing database ... OK
 ```
 
-  Проверяем, что в PGDATA появились каталоги и файлы БД
+**Проверяем, что в PGDATA появились каталоги и файлы БД**
 ```
 [root@db1 yc-user]# ls -al /var/lib/pgsql/16/data/
 total 0
@@ -290,7 +292,7 @@ drwx------.  2 postgres postgres    18 Dec 13 12:17 pg_xact
 -rw-------.  1 postgres postgres 29663 Dec 13 12:17 postgresql.conf
 ```
 
-  Добавляем загрузку shared_preload для pg_stat_statements
+**Добавляем загрузку shared_preload для pg_stat_statements**
 ```
 [root@db1 yc-user]# vi /data/pg/postgresql.conf 
 [root@db1 yc-user]# tail -n 8 /data/pg/postgresql.conf 
@@ -305,7 +307,7 @@ track_io_timing = on
 ```
 
 
-  Запускаем postgresql и проверяем, что он запустился:
+**Запускаем postgresql и проверяем, что он запустился:**
 ```
 [root@db1 yc-user]# systemctl enable postgresql-16
 Created symlink /etc/systemd/system/multi-user.target.wants/postgresql-16.service → /usr/lib/systemd/system/postgresql-16.service.
@@ -333,8 +335,10 @@ Dec 13 12:24:18 db1.ru-central1.internal postgres[9069]: 2024-12-13 12:24:18.558
 Dec 13 12:24:18 db1.ru-central1.internal systemd[1]: Started PostgreSQL 16 database server.
 ```
 
-  Подключемся к postgres, создаем БД с именем 'example',  
-и создаем EXTENSION pg_stat_statements.
+### **Подготовка к тестированию**
+
+**Подключемся к postgres, создаем БД с именем 'example',  
+и создаем EXTENSION pg_stat_statements**
 ```
 [root@db1 yc-user]# su - postgres
 [postgres@db1 ~]$ psql 
@@ -349,17 +353,17 @@ example=# CREATE EXTENSION pg_stat_statements;
 CREATE EXTENSION
 ```
 
-  Перегружаем VM:
+**Перегружаем VM:**
 ```
 [root@db1 yc-user]# reboot
 Connection to 51.250.75.96 closed by remote host.
 Connection to 51.250.75.96 closed.
 ```
 
-  На этом этапе у нас есть преднастроенный инстанс БД postgres  
-с дефолтными настройками.  
+**На этом этапе у нас есть преднастроенный инстанс БД postgres  
+с дефолтными настройками.**
   
-  Инициализируем pgbench на использование БД "example":
+**Инициализируем pgbench на использование БД "example":**
 ```
 [postgres@db1 ~]$ /usr/pgsql-16/bin/pgbench -s 100 -i example
 dropping old tables...
@@ -375,7 +379,9 @@ creating primary keys...
 done in 253.77 s (drop tables 0.00 s, create tables 0.03 s, client-side generate 224.40 s, vacuum 0.30 s, primary keys 29.03 s).
 ```
 
-  Также предварительно очищаем статистику:
+### **Тестирование с дефолтной конфигурацией**
+
+**Предварительно очищаем статистику:**
 ```
 [postgres@db1 ~]$ psql -d example -c 'SELECT pg_stat_statements_reset();'
  pg_stat_statements_reset 
@@ -384,7 +390,7 @@ done in 253.77 s (drop tables 0.00 s, create tables 0.03 s, client-side generate
 (1 row)
 ```
 
-  Запускаем три раза pgbench и выбираем лучший результат:
+**Запускаем три раза pgbench и выбираем лучший результат:**
 ```
 [postgres@db1 ~]$ /usr/pgsql-16/bin/pgbench -c 50 -j 4 -T 120 example
 pgbench (16.6)
@@ -403,6 +409,7 @@ initial connection time = 49.601 ms
 tps = 514.137776 (without initial connection time)
 ```
 
+**Собираем статистику запросов с pg_stat_statements**
 ```
 [postgres@db1 ~]$ psql -d example -c 'SELECT substring(query, 1, 50) AS short_query, round(total_exec_time::numeric, 2) AS total_time, calls, rows, round(total_exec_time::numeric / calls, 2) AS avg_time, round((100 * total_exec_time/ sum(total_exec_time::numeric) OVER ())::numeric, 2) AS percentage_cpu FROM pg_stat_statements ORDER BY total_time DESC LIMIT 10;'
                     short_query                     | total_time | calls  |  rows  | avg_time | percentage_cpu 
@@ -421,10 +428,10 @@ tps = 514.137776 (without initial connection time)
 ```
 
 
-### Тюним БД
+### **Тюним БД**
 
-  Добавляем опции "noatime,nodiratime" в "/etc/fstab" и перемонтируем "/data/pg" и  
-проверяем, что параметры добавились:
+**Добавляем опции "noatime,nodiratime" в "/etc/fstab" и перемонтируем "/data/pg" и  
+проверяем, что параметры добавились:**
 ```
 [root@db1 yc-user]# grep 09ff4b70-af14-4bb2-b20c-679cf0f94c24 /etc/fstab
 UUID=09ff4b70-af14-4bb2-b20c-679cf0f94c24 /data/pg                xfs     defaults,noatime,nodiratime        0 0
@@ -675,6 +682,17 @@ tps = 1460.792281 (without initial connection time)
  vacuum pgbench_branches                            |       1.21 |      3 |      0 |     0.40 |           0.00
  truncate pgbench_history                           |       0.74 |      3 |      0 |     0.25 |           0.00
 (10 rows)
+```
+
+## Удаляем созданные ресурсы:
+```
+[root@test2 hw-8]# yc compute instance delete --name db1
+done (1m23s)
+[root@test2 hw-8]# yc compute disk delete --name data 
+done (15s)
+[root@test2 hw-8]# yc vpc subnet delete --name otus-subnet
+done (3s)
+[root@test2 hw-8]# yc vpc network delete --name "otus-net"
 ```
 
 
