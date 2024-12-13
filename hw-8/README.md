@@ -48,7 +48,7 @@ v4_cidr_blocks:
 | e9bimdev5fbn811d5khc | otus-subnet | enp7vepl760r9qrp4ti2 |                | ru-central1-a | [10.95.98.0/24] |
 +----------------------+-------------+----------------------+----------------+---------------+-----------------+
 ```
-**Создаем VM**
+**Создаем VM**  
 В качесте образа выбираем **almalinux-8**
 ```
 [root@test2 hw-8]# yc compute instance create --name db1 --hostname db1 --cores 4 --memory 8 --create-boot-disk size=10G,type=network-hdd,image-folder-id=standard-images,image-family=almalinux-8 --network-interface subnet-name=otus-subnet,nat-ip-version=ipv4 --ssh-key /home/voronov/.ssh/id_rsa.pub
@@ -443,8 +443,8 @@ UUID=09ff4b70-af14-4bb2-b20c-679cf0f94c24 /data/pg                xfs     defaul
 /dev/vdb on /data/pg type xfs (rw,noatime,nodiratime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota)
 ```
 
-  Настраиваем tuned:
-  Проверяем, что демон запущен
+**Настраиваем tuned:**  
+Проверяем, что демон запущен
 ```
 [root@db1 yc-user]# systemctl status tuned
 ● tuned.service - Dynamic System Tuning Daemon
@@ -462,7 +462,7 @@ UUID=09ff4b70-af14-4bb2-b20c-679cf0f94c24 /data/pg                xfs     defaul
 Dec 13 12:30:12 db1.ru-central1.internal systemd[1]: Starting Dynamic System Tuning Daemon...
 Dec 13 12:30:13 db1.ru-central1.internal systemd[1]: Started Dynamic System Tuning Daemon.
 ```
-  Создаем кастомный конфиг с именем postgresql:
+**Создаем кастомный конфиг с именем postgresql:**
 ```
 [root@db1 yc-user]# mkdir /usr/lib/tuned/postgresql/
 [root@db1 yc-user]# vi /usr/lib/tuned/postgresql/tuned.conf
@@ -505,13 +505,13 @@ net.ipv4.tcp_max_syn_backlog=4096
 [vm]
 transparent_hugepages=never
 ```
-  Восстанавлием правила selinux:
+**Восстанавлием правила selinux:**
 ```
 [root@db1 yc-user]# restorecon -RFvv /usr/lib/tuned/postgresql
 Relabeled /usr/lib/tuned/postgresql from unconfined_u:object_r:lib_t:s0 to system_u:object_r:lib_t:s0
 Relabeled /usr/lib/tuned/postgresql/tuned.conf from unconfined_u:object_r:lib_t:s0 to system_u:object_r:lib_t:s0
 ```
-  Активируем профиль с именем postgresql:
+**Активируем профиль с именем postgresql:**
 ```
 [root@db1 yc-user]# tuned-adm list | grep postgre
 - postgresql                  - Optimize for PostgreSQL RDBMS
@@ -522,7 +522,7 @@ Relabeled /usr/lib/tuned/postgresql/tuned.conf from unconfined_u:object_r:lib_t:
 Current active profile: postgresql
 ```
 
-  Увеличиваем лимиты для пользователя postgres   
+**Увеличиваем лимиты для пользователя postgres**   
 в systed юните:
 ```
 [root@db1 yc-user]# vi /usr/lib/systemd/system/postgresql-16.service
@@ -549,13 +549,15 @@ root soft nofile 500000
 root hard nofile 500000
 postgres soft nofile 500000
 postgres hard nofile 500000
-
+```
+Восстанавливаем правила selinux
+```
 [root@db1 yc-user]# restorecon -Fvv /etc/security/limits.d/30-pgsqlproc.conf
 Relabeled /etc/security/limits.d/30-pgsqlproc.conf from unconfined_u:object_r:etc_t:s0 to system_u:object_r:etc_t:s0
 ```
 
 
-  Используя https://www.pgconfig.org и входные параметры:
+**Используя https://www.pgconfig.org и входные параметры:**
 ```
 num_cpu=4
 total_mem=8G
@@ -564,7 +566,7 @@ postgres_version=16
 storage=ssd
 profile=oltp
 ```
-  Формируем параметры для postgresql.conf
+**Формируем параметры для postgresql.conf**
 ```
 # Memory Configuration
 shared_buffers = 2GB
@@ -588,13 +590,13 @@ max_parallel_workers_per_gather = 2
 max_parallel_workers = 2
 ```
 
-  Перегружаем VM:
+**Перегружаем VM:**
 ```
 [root@db1 yc-user]# reboot
 Connection to 51.250.75.96 closed by remote host.
 Connection to 51.250.75.96 closed.
 ```
-
+**Проверяем, что конфиги применились после перезагрузки**
 ```
 [root@db1 yc-user]# sysctl -a | grep vm.swappiness
 vm.swappiness = 5
@@ -612,7 +614,7 @@ vm.swappiness = 5
 (1 row)
 ```
 
-  Проверяем установку limits:
+**Проверяем установку limits:**
 ```
 [root@db1 yc-user]# systemctl status postgresql-16.service | grep 'Main PID'
  Main PID: 1019 (postgres)
@@ -639,7 +641,9 @@ Max realtime priority     0                    0
 Max realtime timeout      unlimited            unlimited            us    
 ```
 
-  Сбрасываем статистике pg_stat_statements:
+### **Тестирование с оптимизированной конфигурацией**
+
+**Сбрасываем статистике pg_stat_statements:**
 ```
 [postgres@db1 ~]$ psql -d example -c 'SELECT pg_stat_statements_reset();'
  pg_stat_statements_reset 
@@ -648,7 +652,7 @@ Max realtime timeout      unlimited            unlimited            us
 (1 row)
 ```
 
-  Запускаем три раза pgbench и выбираем лучший результат:
+**Запускаем три раза pgbench и выбираем лучший результат:**
 ```
 [postgres@db1 ~]$ /usr/pgsql-16/bin/pgbench -c 50 -j 4 -T 120 example
 pgbench (16.6)
@@ -666,7 +670,7 @@ latency average = 34.228 ms
 initial connection time = 51.061 ms
 tps = 1460.792281 (without initial connection time)
 ```
-
+**Смотрим статистику запросов в pg_stat_statements**
 ```
 [postgres@db1 ~]$ psql -d example -c 'SELECT substring(query, 1, 50) AS short_query, round(total_exec_time::numeric, 2) AS total_time, calls, rows, round(total_exec_time::numeric / calls, 2) AS avg_time, round((100 * total_exec_time/ sum(total_exec_time::numeric) OVER ())::numeric, 2) AS percentage_cpu FROM pg_stat_statements ORDER BY total_time DESC LIMIT 10;'
                     short_query                     | total_time | calls  |  rows  | avg_time | percentage_cpu 
@@ -684,7 +688,7 @@ tps = 1460.792281 (without initial connection time)
 (10 rows)
 ```
 
-## Удаляем созданные ресурсы:
+### **Удаляем созданные ресурсы:**
 ```
 [root@test2 hw-8]# yc compute instance delete --name db1
 done (1m23s)
@@ -696,7 +700,7 @@ done (3s)
 ```
 
 
-## Сравнение результатов
+## **Сравнение результатов**
 
 |                                                    | было       | стало      |
 |----------------------------------------------------|------------|------------|
@@ -710,3 +714,4 @@ done (3s)
 |SELECT abalance FROM pgbench_accounts WHERE aid =   | 0.01       | 0.01       |
 |INSERT INTO pgbench_history (tid, bid, aid, delta,  | 0.01       | 0.01       |
 
+**В итоге удалось улучшить результаты тестов примерно в 2..3 раза**
