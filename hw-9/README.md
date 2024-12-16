@@ -20,9 +20,9 @@
 ## **Выполнение ДЗ**
 
 ### **Проведем тестирование в три этапа**
-- postgres
-- postgres + timescaledb
-- clickouse
+- Postgres
+- Postgres + TimescaleDB
+- Clickhouse
 
 ### **Установка ВМ**
 **Создаем VM**
