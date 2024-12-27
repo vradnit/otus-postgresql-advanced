@@ -315,7 +315,7 @@ postgres-operator-5f587dbd7f-t7q6v   0/1     ImagePullBackOff   0          48s
   Warning  Failed     10s (x2 over 114s)   kubelet            Failed to pull image "ghcr.io/zalando/postgres-operator:v1.14.0": rpc error: code = DeadlineExceeded desc = failed to pull and unpack image "ghcr.io/zalando/postgres-operator:v1.14.0": failed to resolve reference "ghcr.io/zalando/postgres-operator:v1.14.0": failed to do request: Head "https://ghcr.io/v2/zalando/postgres-operator/manifests/v1.14.0": dial tcp 140.82.121.34:443: i/o timeout
   Warning  Failed     10s (x3 over 114s)   kubelet            Error: ErrImagePull
 ```
-**используя доку создаем маршрут по умолчанию**
+**используя доку создаем маршрут по умолчанию**  
 https://yandex.cloud/ru/docs/vpc/operations/create-nat-gateway
 ```
 [root@test2 hw-10]# yc vpc gateway create --name ext-gateway
@@ -629,7 +629,7 @@ pgdata-pg1-2   Bound    pvc-3c2ec10d-2c24-447c-a923-a35103a75335   10Gi       RW
 
 
 
-###**Поднимаем кластер K8S в зоне B**
+### **Поднимаем кластер K8S в зоне B**
 **Создаем подсеть для зоны otus-subnet-b**
 ```
 [root@test2 hw-10]# yc vpc subnet create --name otus-subnet-b --zone ru-central1-b --range 10.95.102.0/24 --network-name otus-net --description "otus-subnet-b"
@@ -872,7 +872,8 @@ compute-default-zone: ru-central1-b
 Client Version: v1.28.0
 Kustomize Version: v5.0.4-0.20230601165947-6ce0bf390ce3
 ```
-**Подправим путь до "yc" в конфиге .kube/config и затем проверяем подключение к кластеру **
+
+**Подправим путь до "yc" в конфиге .kube/config и затем проверяем подключение к кластеру**
 ```
 [yc-user@vm-b ~]$ vi .kube/config 
 [yc-user@vm-b ~]$ kubectl cluster-info
