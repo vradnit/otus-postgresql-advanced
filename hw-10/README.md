@@ -1266,7 +1266,7 @@ postgres-operator   ClusterIP      10.97.250.148   <none>         8080/TCP      
 ```
 **видим, что IP получили**
 
-**Удостоверяемся что по "/primary" мастер отдает 200, а standby 503**
+**Удостоверяемся что по "/primary" мастер отдает 200, а standby 503**  
 **При этом также проверяем что и мастер и standby по "leader" оба отдают 200**
 ```
 [yc-user@vm-a ~]$ curl -D - http://10.95.101.38:8008/primary; echo ""
@@ -1328,8 +1328,8 @@ ERROR: rpc error: code = ResourceExhausted desc = Quota limit ylb.networkLoadBal
 **В итоге столкнулнись с ограничениями ЯО**
 - по дефолту только два LB, а дополнительные нужно запрашивать через ТП
 - TCP балансировку нельзя настроить на "svc/Loadbalancer k8s"   
-  ( т.е. можно только на IP VM ) 
-  https://yandex.cloud/ru/docs/network-load-balancer/concepts/ 
+  ( т.е. можно только на IP VM )  
+  https://yandex.cloud/ru/docs/network-load-balancer/concepts/  
   ( возможно я ошибаюсь )
 
 **Итоги**
@@ -1337,6 +1337,6 @@ ERROR: rpc error: code = ResourceExhausted desc = Quota limit ylb.networkLoadBal
 - попробовал k8s от ЯО
 - попытался настроить TCP балансир 
 - также изучил рекомендации от патрони   
-  https://patroni.readthedocs.io/en/latest/ha_multi_dc.html  
+  https://patroni.readthedocs.io/en/latest/ha_multi_dc.html   
   где описана методика преключения при "multi_dc"
 
