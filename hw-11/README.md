@@ -1013,12 +1013,12 @@ statement latencies in milliseconds and failures:
 |**BENCH_RW** latency average                           | 19.657 ms  |  -           |
 |**BENCH_RW** initial connection time                   | 62.886 ms  |  -           |
 |**BENCH_RW** tps (without initial connection time)     | 2543       |  -           |
-|-------------------------------------------------------|------------|--------------|
+|                                                       |            |              |
 |**BENCH_RO** number of transactions actually processed | 3921733    | 144220       |
 |**BENCH_RO** latency average                           | 1.531 ms   | 40.917 ms    |
 |**BENCH_RO** initial connection time                   | 77.431 ms  | 2009.740 ms  |
 |**BENCH_RO** tps (without initial connection time)     | 32665      | 1222         |
-|-------------------------------------------------------|------------|--------------|
+|                                                       |            |              |
 | Общее кол-во полетов                                  | 289492 ms  | 16467 ms     |
 | Кол-во полетов "callsign IN ('UUEE', 'UUDD', 'UUWW')" | 286825 ms  | 77963 ms     |
 | ТОП 10 аэропортов с максимальным кол-вом полетов      | 288593 ms  | 45007 ms     |
