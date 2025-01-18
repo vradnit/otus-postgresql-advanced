@@ -1404,7 +1404,7 @@ statement latencies in milliseconds and failures:
 ## **Сравнение результатов**
 Результаты тестирования сведены в таблицу:
 | **BENCH**                                    |**Postgres**|**Postgres_Citus**|
-|-----------------------------------------------------------|------------------|
+|----------------------------------------------|------------|------------------|
 | number of transactions actually processed    | 92897      |  8654            |
 | latency average                              | 64.601 ms  |  698.678 ms      |
 | initial connection time                      | 50.664 ms  |  104.857 ms      |
