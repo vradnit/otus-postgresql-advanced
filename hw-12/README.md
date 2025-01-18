@@ -65,7 +65,7 @@
 
 
 
-###**Установка кластера ETCD**
+### **Установка кластера ETCD**
 **На всех в /etc/hosts нодах добавляем**
 ```
 # cat /etc/hosts
@@ -247,7 +247,7 @@ tags:
     nosync: false
 ```
 
-**Запускаем patroni, сначала на координат-нодах, и только после на остальных нодах*
+**Запускаем patroni, сначала на координат-нодах, и только после на остальных нодах**
 ```
 systemctl enable patroni
 systemctl start patroni
@@ -343,7 +343,7 @@ otus=# \dx
 
 
 
-###**Загрузка датасета Opensky**
+### **Загрузка датасета Opensky**
 **Скачиваем датасет**
 ```
 [yc-user@coord1 ~]$ mkdir csv
@@ -539,10 +539,10 @@ flightlist_20210601_20210630.csv.gz
 COPY 2540487
 Fri Jan 17 23:20:48 UTC 2025
 ```
-**Время загрузки датасета составило 24 минуты**
+**Время загрузки датасета составило 24 минуты**  
 
 
-###**Проверяем распределение загузки по партициям**
+**Проверяем распределение загузки по партициям**
 ```
 otus=# SELECT table_name, table_size FROM citus_tables;
     table_name    | table_size
@@ -679,7 +679,7 @@ Time: 800.654 ms
 ```
 
 
-###**Поменяем тип таблиц с heap на columnar**
+### **Поменяем тип таблиц с heap на columnar**
 ```
 otus=# CALL alter_old_partitions_set_access_method('opensky','2021-12-01 00:00:00', 'columnar' );
 NOTICE:  converting opensky_p2018_12 with start time 2018-12-01 00:00:00+00 and end time 2019-01-01 00:00:00+00
@@ -959,7 +959,7 @@ otus=# SELECT COUNT(*) FROM opensky WHERE callsign IN ('UUEE', 'UUDD', 'UUWW');
 Time: 511.946 ms
 ```
 
-###**Запустим тесты pgbench**
+### **Запустим тесты pgbench**
 ```
 [root@coord1 csv]# /usr/pgsql-16/bin/pgbench -h 127.0.0.1 -U postgres -i otus
 dropping old tables...
@@ -1006,11 +1006,12 @@ statement latencies in milliseconds and failures:
         12.326           0  END;
 ```
 **на этом тестирование postrges + citus закончим**  
+
 **Для сравнения postrges + citus с одним инстансом postgres установим его на ноде work1-1**
 
 
 
-###**Установка инстансом PostgreSQL**
+### **Установка инстансом PostgreSQL**
 
 **Удаляем директорию с данными и инициалицируем кластер PostgreSQL (на одной ноде)**
 ```
@@ -1353,7 +1354,7 @@ Time: 667330.219 ms (11:07.330)
 ```
 
 
-###**Тестирование pgbench PostgreSQL [одна нода]**
+### **Тестирование pgbench PostgreSQL [одна нода]**
 ```
 [postgres@work1-1 ~]$ /usr/pgsql-16/bin/pgbench -i opensky
 dropping old tables...
