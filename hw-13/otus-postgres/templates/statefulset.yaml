@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "otus-postgres.fullname" . }}
+  labels:
+    {{- include "otus-postgres.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "otus-postgres.fullname" . }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "otus-postgres.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "otus-postgres.labels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        env:
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                  name: {{ include "otus-postgres.fullname" . }}-secrets
+                  key: POSTGRES_USER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                  name: {{ include "otus-postgres.fullname" . }}-secrets
+                  key: POSTGRES_PASSWORD
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.service.port }}
+          name: postgres
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 12 }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 12 }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        volumeMounts:
+        - name:  {{ include "otus-postgres.fullname" . }}-data
+          mountPath: /var/lib/postgresql/data
+          subPath: postgres
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ include "otus-postgres.fullname" . }}-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.storageClassName }}
+      resources:
+        requests:
+          storage: {{ .Values.storageSize }}
