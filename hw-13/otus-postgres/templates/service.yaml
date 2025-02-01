@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "otus-postgres.fullname" . }}
+  labels:
+    {{- include "otus-postgres.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: postgres
+      port: {{ .Values.service.port }}
+      {{- if eq .Values.service.type "NodePort" }}
+      nodePort: {{ .Values.service.nodeport }}
+      {{- end }}
+      targetPort: postgres
+      protocol: TCP
+  selector:
+    {{- include "otus-postgres.selectorLabels" . | nindent 4 }}
+

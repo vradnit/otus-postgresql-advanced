@@ -1,0 +1,27 @@
+image:
+  repository: postgres
+  pullPolicy: IfNotPresent
+  tag: "16.3"
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: NodePort
+  nodeport: 30432
+  port: 5432
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+secret:
+  create: true
+  postgres_user: cG9zdGdyZXM=  
+  postgres_password: cG9zdGdyZXM=
+
+storageClassName: standard
+storageSize: 1G
+ 
