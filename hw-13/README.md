@@ -80,9 +80,9 @@ NAME                 PROVISIONER                RECLAIMPOLICY   VOLUMEBINDINGMOD
 standard (default)   k8s.io/minikube-hostpath   Delete          Immediate           false                  2m51s
 ```
 
-### **Вариант создания postgres statefullset через YML манифесты**
+### **Вариант создания postgres statefullset через YAML манифесты**
 
-**Создаем два ямл манифеста**
+**Создаем два yaml манифеста**
 ```
 [voronov@test2 hw-13]$ ll ./manifests/
 total 8
@@ -92,7 +92,7 @@ total 8
 в postgres.yaml описаны манифесты service и statefulset,  
 в secrets.yaml описаны секреты для инициализации БД  
 в качестве образа будем использовать образ postgres:16.3  
-тип сервиса вберем NodePort для того чтобы подключится к БД без "portforward"
+тип сервиса выберем NodePort для того чтобы подключится к БД без "portforward"
 
 
 **Загружаем манифесты в minikube**
