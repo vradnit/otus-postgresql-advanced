@@ -1,0 +1,31 @@
+[all]
+master1  ansible_host=192.168.0.221
+master2  ansible_host=192.168.0.222
+master3  ansible_host=192.168.0.223
+
+worker1-1  ansible_host=192.168.0.224
+worker1-2  ansible_host=192.168.0.225
+worker2-1  ansible_host=192.168.0.226
+worker2-2  ansible_host=192.168.0.227
+worker3-1  ansible_host=192.168.0.228
+worker3-2  ansible_host=192.168.0.229
+
+[master]
+master1
+master2
+master3
+
+[worker]
+worker1-1
+worker1-2
+worker2-1
+worker2-2
+worker3-1
+worker3-2
+
+
+
+[all:vars]
+ansible_connection=ssh
+ansible_user=root
+ansible_ssh_private_key_file=/home/voronov/.ssh/id_rsa_test
