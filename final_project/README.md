@@ -1,735 +1,299 @@
+# Сравнение производительности кластера Citus на базе Patoni и ArenadataDB на большом объеме данных
 
 
+## Описание цели, схемы и плана тестирования
+
+### Цель: сравнить производительность аналитических запросов кластеров "Citus на базе Patoni" и "ArenadataDB"
+
+### Схема тестирования:
+- Версия ОS: Ubuntu 22.04
+- Конфигурация нод:  
+  CPU/8, Mem/16GB, SSD/30GB
+- Распределение нод:
+  - 3 для мастер нод
+  - 6 для воркер нод
+- Oграничения:
+  - используется виртуализация vmware
+  - под капотом один SSD диск на все ВМ
+- Датасет для тестирования:  
+  ![Датасет для тестирования](https://zenodo.org/records/7923702 "Датасет для тестирования")  
+  ( открытые данные авиаперелетов с 2019 по 2022 год )
 
 
+## Описание установки "кластера Citus на базе Patoni"
 
+### Схема стенда "кластера Citus на базе Patoni"
+![Схема стенда кластера Citus на базе Patoni](images/schema_citus_patroni.png "Схема стенда кластера Citus на базе Patoni")
+
+### На все ноды в /etc/hosts добавляем 
 ```
-# docker create --name adcm -p 8000:8000 -v /opt/adcm:/adcm/data -e LOG_LEVEL="INFO" hub.arenadata.io/adcm/adcm:2.5.0
-
-# docker start adcm
-adcm
-
-# docker ps -a
-CONTAINER ID   IMAGE                                              COMMAND                  CREATED              STATUS                   PORTS                                      NAMES
-ca75c764c602   hub.arenadata.io/adcm/adcm:2.5.0                   "/etc/startup.sh"        About a minute ago   Up 3 seconds             0.0.0.0:8000->8000/tcp                     adcm
-```
-
-
-```
-https://docs.arenadata.io/ru/ADCM/current/get-started/install.html
-```
-
-```
-User: admin
-Password: admin
-```
-
-```
-загружаем bundle 
-
-adcm_host_ycc_v3.12-1_community.tgz
-adcm_cluster_adb_v7.2.0_arenadata1_b1-1_community.tgz
-```
-
-```
-# cat install.log_1
-```
-
-
-```
-ansible -i ./inventory -m shell -b -a 'apt-get -y install cron' all
-ansible -i ./inventory -m shell -b -a 'apt-get install -y chrony' all
+192.168.0.231  c-master1
+192.168.0.232  c-master2
+192.168.0.233  c-master3
+192.168.0.234  c-worker1-1
+192.168.0.235  c-worker1-2
+192.168.0.236  c-worker2-1
+192.168.0.237  c-worker2-2
+192.168.0.238  c-worker3-1
+192.168.0.239  c-worker3-2
 ```
 
-
+### На мастер нодах устанавливаем etcd
 ```
-gpadmin@master2:~/csv$ wget -O- https://zenodo.org/record/5092942 | grep -oP 'https://zenodo.org/records/5092942/files/flightlist_\d+_\d+\.csv\.gz' | xargs wget
-              
-gpadmin@master2:~/csv$ ls -al
-total 4509016
-drwxrwxr-x 2 gpadmin gpadmin      4096 Feb 20 18:10 .
-drwxr-x--- 7 gpadmin gpadmin      4096 Feb 20 17:47 ..
--rw-rw-r-- 1 gpadmin gpadmin 149656072 Feb 20 18:11 flightlist_20190101_20190131.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 139872800 Feb 20 17:49 flightlist_20190201_20190228.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 159072441 Feb 20 18:09 flightlist_20190301_20190331.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 166006708 Feb 20 18:08 flightlist_20190401_20190430.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 177692774 Feb 20 17:48 flightlist_20190501_20190531.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 186373210 Feb 20 18:06 flightlist_20190601_20190630.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 203480200 Feb 20 18:03 flightlist_20190701_20190731.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 210148935 Feb 20 18:01 flightlist_20190801_20190831.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 191374713 Feb 20 17:58 flightlist_20190901_20190930.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 206917730 Feb 20 17:55 flightlist_20191001_20191031.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 190775945 Feb 20 17:53 flightlist_20191101_20191130.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 189553155 Feb 20 17:52 flightlist_20191201_20191231.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 193891069 Feb 20 18:04 flightlist_20200101_20200131.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 186334754 Feb 20 18:07 flightlist_20200201_20200229.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 151571888 Feb 20 18:10 flightlist_20200301_20200331.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin  58544368 Feb 20 18:09 flightlist_20200401_20200430.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin  75376842 Feb 20 18:09 flightlist_20200501_20200531.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 100336756 Feb 20 18:05 flightlist_20200601_20200630.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 134445252 Feb 20 18:03 flightlist_20200701_20200731.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 144364225 Feb 20 17:59 flightlist_20200801_20200831.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 136524682 Feb 20 17:58 flightlist_20200901_20200930.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 138560754 Feb 20 17:56 flightlist_20201001_20201031.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 126932585 Feb 20 17:49 flightlist_20201101_20201130.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 132372973 Feb 20 17:50 flightlist_20201201_20201231.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 123902516 Feb 20 17:51 flightlist_20210101_20210131.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 112332587 Feb 20 17:52 flightlist_20210201_20210228.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 144126125 Feb 20 17:54 flightlist_20210301_20210331.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 154290585 Feb 20 17:56 flightlist_20210401_20210430.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 158083429 Feb 20 18:00 flightlist_20210501_20210530.csv.gz
--rw-rw-r-- 1 gpadmin gpadmin 174242634 Feb 20 18:02 flightlist_20210601_20210630.csv.gz
+# apt-get install -y etcd
+# systemctl stop etcd
+```
+
+### Создаем конфиг etcd на каждой мастер ноде.
+Пример конфига с ноды c-master1
+```
+root@c-master1:~# cat /etc/default/etcd 
+ETCD_NAME="c-master1"
+ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
+ETCD_ADVERTISE_CLIENT_URLS="http://c-master1:2379"
+ETCD_LISTEN_PEER_URLS="http://0.0.0.0:2380"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://c-master1:2380"
+ETCD_INITIAL_CLUSTER_TOKEN="etcd_claster"
+ETCD_INITIAL_CLUSTER="c-master1=http://c-master1:2380,c-master2=http://c-master2:2380,c-master3=http://c-master3:2380"
+ETCD_INITIAL_CLUSTER_STATE="new"
+ETCD_DATA_DIR="/var/lib/etcd"
+ETCD_ENABLE_V2="true"
+ETCDCRL_API=2
+```
+
+### Стартуем etcd на всех мастер нодах и проверяем статус
+```
+root@c-master1:~# systemctl start etcd
+
+root@c-master1:~# etcdctl member list
+5184d67c0e2764e1: name=c-master2 peerURLs=http://c-master2:2380 clientURLs=http://c-master2:2379 isLeader=true
+b4d321b6dd227fc9: name=c-master3 peerURLs=http://c-master3:2380 clientURLs=http://c-master3:2379 isLeader=false
+bc691ad35811d924: name=c-master1 peerURLs=http://c-master1:2380 clientURLs=http://c-master1:2379 isLeader=false
+
+root@c-master1:~# etcdctl cluster-health
+member 5184d67c0e2764e1 is healthy: got healthy result from http://c-master2:2379
+member b4d321b6dd227fc9 is healthy: got healthy result from http://c-master3:2379
+member bc691ad35811d924 is healthy: got healthy result from http://c-master1:2379
+cluster is healthy
 ```
 
 
+### На всех нодах устанавливаем демон tuned и создаем профиль для тюнинга ОС под нагрузку сервиса postgresql
 ```
-gpadmin@master2:~$ psql -h 192.168.0.221 postgres
-psql (12.12)
-Type "help" for help.
+root@c-master1:~# apt-get install tuned
+root@c-master1:~# > /usr/lib/tuned/postgresql/tuned.conf
+root@c-master1:~# vim.tiny /usr/lib/tuned/postgresql/tuned.conf 
+root@c-master1:~# cat /usr/lib/tuned/postgresql/tuned.conf
+[main]
+summary=Optimize for PostgreSQL RDBMS
+include=throughput-performance
+[sysctl]
+vm.swappiness = 5
+vm.dirty_background_ratio = 10
+vm.dirty_ratio = 40
+vm.dirty_expire_centisecs = 3000
+vm.dirty_writeback_centisecs = 500
+kernel.shmmax = 18446744073692700000
+kernel.shmall = 18446744073692700000
+kernel.shmmni = 4096
+kernel.sem = 250 512000 100 2048
+fs.file-max = 312139770
+fs.aio-max-nr = 1048576
+net.ipv4.ip_local_port_range = 2048 65499
+# Permits sockets in the time-wait state to be reused for new connections:
+net.ipv4.tcp_tw_reuse = 1
+net.core.netdev_budget = 1024
+net.core.netdev_max_backlog = 2048
+net.core.rmem_default = 262144
+net.core.rmem_max = 4194304
+net.core.wmem_default = 262144
+net.core.wmem_max = 1048576
+kernel.panic_on_oops = 1
+# We don't need NUMA balancing in this box:
+kernel.numa_balancing = 0
+# Used if not defined by the service:
+net.core.somaxconn = 4096
+# Other parameters to override throughput-performance template
+net.ipv4.tcp_rmem = 4096 87380 16777216
+net.ipv4.tcp_wmem = 4096 65536 16777216
+net.ipv4.tcp_window_scaling = 1
+net.netfilter.nf_conntrack_max = 250000
+net.ipv4.tcp_max_syn_backlog=4096
+[vm]
+transparent_hugepages=never
 
-postgres=# \l
-                            List of databases
-   Name    |  Owner  | Encoding | Collate |  Ctype  |  Access privileges  
------------+---------+----------+---------+---------+---------------------
- adb       | gpadmin | UTF8     | C       | C.UTF-8 | =Tc/gpadmin        +
-           |         |          |         |         | gpadmin=CTc/gpadmin
- postgres  | gpadmin | UTF8     | C       | C.UTF-8 | 
- template0 | gpadmin | UTF8     | C       | C.UTF-8 | =c/gpadmin         +
-           |         |          |         |         | gpadmin=CTc/gpadmin
- template1 | gpadmin | UTF8     | C       | C.UTF-8 | =c/gpadmin         +
-           |         |          |         |         | gpadmin=CTc/gpadmin
-(4 rows)
 
-postgres=# CREATE DATABASE otus;
-CREATE DATABASE
-postgres=# \dx
-                                List of installed extensions
-      Name       | Version |   Schema   |                    Description                    
------------------+---------+------------+---------------------------------------------------
- gp_exttable_fdw | 1.0     | pg_catalog | External Table Foreign Data Wrapper for Greenplum
- gp_toolkit      | 1.5     | gp_toolkit | various GPDB administrative views/functions
- plpgsql         | 1.0     | pg_catalog | PL/pgSQL procedural language
-(3 rows)
-
-postgres=# CREATE EXTENSION IF NOT EXISTS postgis;
-CREATE EXTENSION
-postgres=# \dx
-                                    List of installed extensions
-      Name       | Version |   Schema   |                        Description                         
------------------+---------+------------+------------------------------------------------------------
- gp_exttable_fdw | 1.0     | pg_catalog | External Table Foreign Data Wrapper for Greenplum
- gp_toolkit      | 1.5     | gp_toolkit | various GPDB administrative views/functions
- plpgsql         | 1.0     | pg_catalog | PL/pgSQL procedural language
- postgis         | 3.3.2   | public     | PostGIS geometry and geography spatial types and functions
-(4 rows)
-```
-
-```
-otus=# CREATE TABLE opensky                                                         
-(
-    callsign TEXT,
-    number TEXT,
-    icao24 TEXT,
-    registration TEXT,
-    typecode TEXT,
-    origin TEXT,
-    destination TEXT NULL,
-    firstseen TIMESTAMP WITH TIME ZONE NOT NULL,
-    lastseen TIMESTAMP WITH TIME ZONE NOT NULL,
-    day TIMESTAMP WITH TIME ZONE NOT NULL,
-    latitude_1 NUMERIC,
-    longitude_1 NUMERIC,
-    altitude_1 NUMERIC,
-    latitude_2 NUMERIC,
-    longitude_2 NUMERIC,
-    altitude_2 NUMERIC
-) PARTITION BY RANGE (firstseen) DISTRIBUTED BY (callsign);
-CREATE TABLE
-otus=# 
-otus=# CREATE TABLE opensky_2018_12 PARTITION OF opensky FOR VALUES FROM ('2018-12-01 00:00:00') TO ('2019-01-01 00:00:00');
-CREATE TABLE opensky_2019_01 PARTITION OF opensky FOR VALUES FROM ('2019-01-01 00:00:00') TO ('2019-02-01 00:00:00');
-CREATE TABLE opensky_2019_02 PARTITION OF opensky FOR VALUES FROM ('2019-02-01 00:00:00') TO ('2019-03-01 00:00:00');
-CREATE TABLE opensky_2019_03 PARTITION OF opensky FOR VALUES FROM ('2019-03-01 00:00:00') TO ('2019-04-01 00:00:00');
-CREATE TABLE opensky_2019_04 PARTITION OF opensky FOR VALUES FROM ('2019-04-01 00:00:00') TO ('2019-05-01 00:00:00');
-CREATE TABLE opensky_2019_05 PARTITION OF opensky FOR VALUES FROM ('2019-05-01 00:00:00') TO ('2019-06-01 00:00:00');
-CREATE TABLE opensky_2019_06 PARTITION OF opensky FOR VALUES FROM ('2019-06-01 00:00:00') TO ('2019-07-01 00:00:00');
-CREATE TABLE opensky_2019_07 PARTITION OF opensky FOR VALUES FROM ('2019-07-01 00:00:00') TO ('2019-08-01 00:00:00');
-CREATE TABLE opensky_2019_08 PARTITION OF opensky FOR VALUES FROM ('2019-08-01 00:00:00') TO ('2019-09-01 00:00:00');
-CREATE TABLE opensky_2019_09 PARTITION OF opensky FOR VALUES FROM ('2019-09-01 00:00:00') TO ('2019-10-01 00:00:00');
-CREATE TABLE opensky_2019_10 PARTITION OF opensky FOR VALUES FROM ('2019-10-01 00:00:00') TO ('2019-11-01 00:00:00');
-CREATE TABLE opensky_2019_11 PARTITION OF opensky FOR VALUES FROM ('2019-11-01 00:00:00') TO ('2019-12-01 00:00:00');
-CREATE TABLE opensky_2019_12 PARTITION OF opensky FOR VALUES FROM ('2019-12-01 00:00:00') TO ('2020-01-01 00:00:00');
-CREATE TABLE opensky_2020_01 PARTITION OF opensky FOR VALUES FROM ('2020-01-01 00:00:00') TO ('2020-02-01 00:00:00');
-CREATE TABLE opensky_2020_02 PARTITION OF opensky FOR VALUES FROM ('2020-02-01 00:00:00') TO ('2020-03-01 00:00:00');
-CREATE TABLE opensky_2020_03 PARTITION OF opensky FOR VALUES FROM ('2020-03-01 00:00:00') TO ('2020-04-01 00:00:00');
-CREATE TABLE opensky_2020_04 PARTITION OF opensky FOR VALUES FROM ('2020-04-01 00:00:00') TO ('2020-05-01 00:00:00');
-CREATE TABLE opensky_2020_05 PARTITION OF opensky FOR VALUES FROM ('2020-05-01 00:00:00') TO ('2020-06-01 00:00:00');
-CREATE TABLE opensky_2020_06 PARTITION OF opensky FOR VALUES FROM ('2020-06-01 00:00:00') TO ('2020-07-01 00:00:00');
-CREATE TABLE opensky_2020_07 PARTITION OF opensky FOR VALUES FROM ('2020-07-01 00:00:00') TO ('2020-08-01 00:00:00');
-CREATE TABLE opensky_2020_08 PARTITION OF opensky FOR VALUES FROM ('2020-08-01 00:00:00') TO ('2020-09-01 00:00:00');
-CREATE TABLE opensky_2020_09 PARTITION OF opensky FOR VALUES FROM ('2020-09-01 00:00:00') TO ('2020-10-01 00:00:00');
-CREATE TABLE opensky_2020_10 PARTITION OF opensky FOR VALUES FROM ('2020-10-01 00:00:00') TO ('2020-11-01 00:00:00');
-CREATE TABLE opensky_2020_11 PARTITION OF opensky FOR VALUES FROM ('2020-11-01 00:00:00') TO ('2020-12-01 00:00:00');
-CREATE TABLE opensky_2020_12 PARTITION OF opensky FOR VALUES FROM ('2020-12-01 00:00:00') TO ('2021-01-01 00:00:00');
-CREATE TABLE opensky_2021_01 PARTITION OF opensky FOR VALUES FROM ('2021-01-01 00:00:00') TO ('2021-02-01 00:00:00');
-CREATE TABLE opensky_2021_02 PARTITION OF opensky FOR VALUES FROM ('2021-02-01 00:00:00') TO ('2021-03-01 00:00:00');
-CREATE TABLE opensky_2021_03 PARTITION OF opensky FOR VALUES FROM ('2021-03-01 00:00:00') TO ('2021-04-01 00:00:00');
-CREATE TABLE opensky_2021_04 PARTITION OF opensky FOR VALUES FROM ('2021-04-01 00:00:00') TO ('2021-05-01 00:00:00');
-CREATE TABLE opensky_2021_05 PARTITION OF opensky FOR VALUES FROM ('2021-05-01 00:00:00') TO ('2021-06-01 00:00:00');
-CREATE TABLE opensky_2021_06 PARTITION OF opensky FOR VALUES FROM ('2021-06-01 00:00:00') TO ('2021-07-01 00:00:00');
-CREATE TABLE opensky_2021_07 PARTITION OF opensky FOR VALUES FROM ('2021-07-01 00:00:00') TO ('2021-08-01 00:00:00');
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-NOTICE:  table has parent, setting distribution columns to match parent table
-CREATE TABLE
-otus=#
+root@c-master1:~# tuned-adm active ; tuned-adm profile postgresql ;tuned-adm active
 ```
 
 
-
+### Получение конфигурации для тюнинга postgresql 
+Используя онлайн конфигуратор https://www.pgconfig.org  
+и характеристики нод, получаем:
 ```
-otus=# CREATE TABLE opensky                                                         
-(
-    callsign TEXT,
-    number TEXT,
-    icao24 TEXT,
-    registration TEXT,
-    typecode TEXT,
-    origin TEXT,
-    destination TEXT NULL,
-    firstseen TIMESTAMP WITH TIME ZONE NOT NULL,
-    lastseen TIMESTAMP WITH TIME ZONE NOT NULL,
-    day TIMESTAMP WITH TIME ZONE NOT NULL,
-    latitude_1 NUMERIC,
-    longitude_1 NUMERIC,
-    altitude_1 NUMERIC,
-    latitude_2 NUMERIC,
-    longitude_2 NUMERIC,
-    altitude_2 NUMERIC
-) USING ao_column DISTRIBUTED BY (callsign) PARTITION BY RANGE (firstseen) ( START (date '2018-12-31') INCLUSIVE END (date '2021-08-01') EXCLUSIVE EVERY (INTERVAL '1 month') );
-CREATE TABLE
-otus=# \dt
-                          List of relations
- Schema |       Name       |       Type        |  Owner  |  Storage  
---------+------------------+-------------------+---------+-----------
- public | opensky          | partitioned table | gpadmin | ao_column
- public | opensky_1_prt_1  | table             | gpadmin | ao_column
- public | opensky_1_prt_10 | table             | gpadmin | ao_column
- public | opensky_1_prt_11 | table             | gpadmin | ao_column
- public | opensky_1_prt_12 | table             | gpadmin | ao_column
- public | opensky_1_prt_13 | table             | gpadmin | ao_column
- public | opensky_1_prt_14 | table             | gpadmin | ao_column
- public | opensky_1_prt_15 | table             | gpadmin | ao_column
- public | opensky_1_prt_16 | table             | gpadmin | ao_column
- public | opensky_1_prt_17 | table             | gpadmin | ao_column
- public | opensky_1_prt_18 | table             | gpadmin | ao_column
- public | opensky_1_prt_19 | table             | gpadmin | ao_column
- public | opensky_1_prt_2  | table             | gpadmin | ao_column
- public | opensky_1_prt_20 | table             | gpadmin | ao_column
- public | opensky_1_prt_21 | table             | gpadmin | ao_column
- public | opensky_1_prt_22 | table             | gpadmin | ao_column
- public | opensky_1_prt_23 | table             | gpadmin | ao_column
- public | opensky_1_prt_24 | table             | gpadmin | ao_column
- public | opensky_1_prt_25 | table             | gpadmin | ao_column
- public | opensky_1_prt_26 | table             | gpadmin | ao_column
- public | opensky_1_prt_27 | table             | gpadmin | ao_column
- public | opensky_1_prt_28 | table             | gpadmin | ao_column
- public | opensky_1_prt_29 | table             | gpadmin | ao_column
- public | opensky_1_prt_3  | table             | gpadmin | ao_column
- public | opensky_1_prt_30 | table             | gpadmin | ao_column
- public | opensky_1_prt_31 | table             | gpadmin | ao_column
- public | opensky_1_prt_32 | table             | gpadmin | ao_column
- public | opensky_1_prt_4  | table             | gpadmin | ao_column
- public | opensky_1_prt_5  | table             | gpadmin | ao_column
- public | opensky_1_prt_6  | table             | gpadmin | ao_column
- public | opensky_1_prt_7  | table             | gpadmin | ao_column
- public | opensky_1_prt_8  | table             | gpadmin | ao_column
- public | opensky_1_prt_9  | table             | gpadmin | ao_column
-(33 rows)
-```
+# https://www.pgconfig.org
+# Generated by PGConfig 3.1.4 (1fe6d98dedcaad1d0a114617cfd08b4fed1d8a01)
+# https://api.pgconfig.org/v1/tuning/get-config?format=conf&&log_format=csvlog&max_connections=100&pg_version=16&environment_name=DW&total_ram=16GB&cpus=8&drive_type=SSD&arch=x86-64&os_type=linux
 
-```
-gpadmin@master2:~/csv$ date; for ii in flightlist_2019* flightlist_2020* flightlist_2021* ; do echo ${ii} ; zcat ${ii} | psql -h 192.168.0.221 -d otus -c "COPY opensky from stdin with delimiter ',' CSV HEADER" ; done ; date
-Thu Feb 20 19:34:18 UTC 2025
-flightlist_20190101_20190131.csv.gz
-COPY 2145469
-flightlist_20190201_20190228.csv.gz
-COPY 2005958
-flightlist_20190301_20190331.csv.gz
-COPY 2283154
-flightlist_20190401_20190430.csv.gz
-COPY 2375102
-flightlist_20190501_20190531.csv.gz
-COPY 2539167
-flightlist_20190601_20190630.csv.gz
-COPY 2660901
-flightlist_20190701_20190731.csv.gz
-COPY 2898415
-flightlist_20190801_20190831.csv.gz
-COPY 2990061
-flightlist_20190901_20190930.csv.gz
-COPY 2721743
-flightlist_20191001_20191031.csv.gz
-COPY 2946779
-flightlist_20191101_20191130.csv.gz
-COPY 2721437
-flightlist_20191201_20191231.csv.gz
-COPY 2701295
-flightlist_20200101_20200131.csv.gz
-COPY 2734791
-flightlist_20200201_20200229.csv.gz
-COPY 2648835
-flightlist_20200301_20200331.csv.gz
-COPY 2152157
-flightlist_20200401_20200430.csv.gz
-COPY 842905
-flightlist_20200501_20200531.csv.gz
-COPY 1088267
-flightlist_20200601_20200630.csv.gz
-COPY 1444224
-flightlist_20200701_20200731.csv.gz
-COPY 1905528
-flightlist_20200801_20200831.csv.gz
-COPY 2042040
-flightlist_20200901_20200930.csv.gz
-COPY 1930868
-flightlist_20201001_20201031.csv.gz
-COPY 1985145
-flightlist_20201101_20201130.csv.gz
-COPY 1825015
-flightlist_20201201_20201231.csv.gz
-COPY 1894751
-flightlist_20210101_20210131.csv.gz
-COPY 1783384
-flightlist_20210201_20210228.csv.gz
-COPY 1617845
-flightlist_20210301_20210331.csv.gz
-COPY 2079436
-flightlist_20210401_20210430.csv.gz
-COPY 2227362
-flightlist_20210501_20210530.csv.gz
-COPY 2278298
-flightlist_20210601_20210630.csv.gz
-COPY 2540487
-Thu Feb 20 21:18:22 UTC 2025
-```
+# Memory Configuration
+shared_buffers = 4GB
+effective_cache_size = 12GB
+work_mem = 82MB
+maintenance_work_mem = 819MB
 
-```
-gpadmin@master2:~/csv$ psql -h 192.168.0.221 postgres
-psql (12.12)
-Type "help" for help.
+# Checkpoint Related Configuration
+min_wal_size = 2GB
+max_wal_size = 3GB
+checkpoint_completion_target = 0.9
+wal_buffers = -1
 
-postgres=# 
-postgres=# 
-postgres=# 
-postgres=# 
-postgres=# 
-postgres=# select pg_size_pretty(pg_database_size('otus'));
- pg_size_pretty 
-----------------
- 7910 MB
-(1 row)
+# Network Related Configuration
+listen_addresses = '*'
+max_connections = 100
 
-postgres=# SELECT COUNT(*) FROM opensky;
-ERROR:  relation "opensky" does not exist
-LINE 1: SELECT COUNT(*) FROM opensky;
-                             ^
-postgres=# \c otus 
-You are now connected to database "otus" as user "gpadmin".
-otus=# SELECT COUNT(*) FROM opensky;
-NOTICE:  One or more columns in the following table(s) do not have statistics: opensky
-HINT:  For non-partitioned tables, run analyze <table_name>(<column_list>). For partitioned tables, run analyze rootpartition <table_name>(<column_list>). See log for columns missing statistics.
-  count   
-----------
- 66010819
-(1 row)
+# Storage Configuration
+random_page_cost = 1.1
+effective_io_concurrency = 200
 
-otus=# \timing 
-Timing is on.
-otus=# SELECT COUNT(*) FROM opensky;
-NOTICE:  One or more columns in the following table(s) do not have statistics: opensky
-HINT:  For non-partitioned tables, run analyze <table_name>(<column_list>). For partitioned tables, run analyze rootpartition <table_name>(<column_list>). See log for columns missing statistics.
-  count   
-----------
- 66010819
-(1 row)
-
-Time: 34091.301 ms (00:34.091)
-otus=# 
-otus=# ANALYZE ROOTPARTITION opensky;
-ANALYZE
-Time: 73568.162 ms (01:13.568)
-otus=# 
-otus=# SELECT COUNT(*) FROM opensky;
-  count   
-----------
- 66010819
-(1 row)
-
-Time: 29986.938 ms (00:29.987)
-otus=# SELECT COUNT(*) FROM opensky;
-  count   
-----------
- 66010819
-(1 row)
-
-Time: 36058.046 ms (00:36.058)
-otus=# 
+# Worker Processes Configuration
+max_worker_processes = 8
+max_parallel_workers_per_gather = 2
+max_parallel_workers = 2
 ```
 
 
+### Устанавливаем postgresql и patroni на всех нодах кластера и создаем директорию для базы данных:
+(на всех нодах)
 ```
-otus=# SELECT origin, COUNT(*) AS c FROM opensky WHERE origin != '' GROUP BY origin ORDER BY c DESC limit 10;
- origin |   c    
---------+--------
- KORD   | 745007
- KDFW   | 696702
- KATL   | 667286
- KDEN   | 582709
- KLAX   | 581952
- KLAS   | 447789
- KPHX   | 428558
- KSEA   | 412592
- KCLT   | 404612
- VIDP   | 363074
-(10 rows)
-
-Time: 78753.492 ms (01:18.753)
-otus=# 
-otus=# SELECT origin, COUNT(*) AS c FROM opensky WHERE origin != '' GROUP BY origin ORDER BY c DESC limit 10;
- origin |   c    
---------+--------
- KORD   | 745007
- KDFW   | 696702
- KATL   | 667286
- KDEN   | 582709
- KLAX   | 581952
- KLAS   | 447789
- KPHX   | 428558
- KSEA   | 412592
- KCLT   | 404612
- VIDP   | 363074
-(10 rows)
-
-Time: 76253.781 ms (01:16.254)
+root@c-master1:~# echo "deb [arch=amd64] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/postgresql.list
+root@c-master1:~# wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+root@c-master1:~# curl https://install.citusdata.com/community/deb.sh > add-citus-repo.sh
+root@c-master1:~# . ./add-citus-repo.sh
+root@c-master1:~# apt-get install -y postgresql-16 postgresql-16-citus-13.0 postgresql-16-postgis-3 patroni python3-etcd
+root@c-master1:~# systemctl stop postgresql.service ; systemctl disable postgresql.service
+root@c-master1:~# systemctl enable patroni ; systemctl stop patroni
+root@c-master1:~# mkdir -p /data/pg/ ; chown postgres:postgres /data/pg ; chmod go-rx /data/pg
 ```
 
+### Создаем конфигурационный файл /etc/patroni/config.yml
 ```
-otus=# 
-otus=# SELECT COUNT(*) FROM opensky WHERE callsign IN ('UUEE', 'UUDD', 'UUWW');
- count 
--------
-    14
-(1 row)
+scope: patroni
+name: c-master1
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: c-master1:8008
+etcd:
+  hosts: c-master1:2379,c-master2:2379,c-master3:2379
+citus:
+  group: 0
+  database: otus
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      parameters:
+        checkpoint_completion_target: 0.9
+        effective_cache_size: 12GB
+        effective_io_concurrency: 200
+        maintenance_work_mem: 819MB
+        max_connections: 100
+        max_parallel_workers: 2
+        max_parallel_workers_per_gather: 2
+        max_wal_size: 3GB
+        max_worker_processes: 8
+        min_wal_size: 2GB
+        random_page_cost: 1.1
+        shared_buffers: 4GB
+        wal_buffers: -1
+        work_mem: 82MB
+  initdb:
+  - encoding: UTF8
+  - data-checksums
+  pg_hba:
+  - host replication replicator 0.0.0.0/0 md5
+  - host all all 0.0.0.0/0 md5
+  users:
+    admin:
+      password: qwerty
+      options:
+        - createrole
+        - createdb
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: c-master1:5432
+  data_dir: /data/pg/
+  bin_dir: /usr/lib/postgresql/16/bin/
+  pgpass: /tmp/pgpass0
+  authentication:
+    replication:
+      username: replicator
+      password: qwerty
+    superuser:
+      username: postgres
+      password: qwerty
+    rewind:
+      username: rewind_user
+      password: qwerty
+  parameters:
+    unix_socket_directories: '.'
+tags:
+    nofailover: false
+    noloadbalance: false
+    clonefrom: false
+    nosync: false
+```
+, где
+- name, restapi.connect_address, postgresql.connect_address - меняем на имя ноды
+- citus.group - устанавливаем 0 на мастерах, 1 на c-worker1-[1,2], 2 на c-worker2-[1,2], 3 на c-worker3-[1,2]
+- bootstrap.dcs.postgresql.parameters - добавляем параметры полученные с https://www.pgconfig.org
 
-Time: 26984.200 ms (00:26.984)
-otus=# 
-otus=# SELECT COUNT(*) FROM opensky WHERE callsign IN ('UUEE', 'UUDD', 'UUWW');
- count 
--------
-    14
-(1 row)
 
-Time: 28438.271 ms (00:28.438)
+### Стартуем patroni на мастер нодах
+```
+root@c-master1:~#  systemctl stаp patroni
+```
+### Проверяем статус patroni на мастер нодах
+```
+root@c-master1:~# patronictl --config-file=/etc/patroni/config.yml list
++ Citus cluster: patroni -------+----------------+-----------+----+-----------+
+| Group | Member    | Host      | Role           | State     | TL | Lag in MB |
++-------+-----------+-----------+----------------+-----------+----+-----------+
+|     0 | c-master1 | c-master1 | Leader         | running   |  1 |           |
+|     0 | c-master2 | c-master2 | Quorum Standby | streaming |  1 |         0 |
+|     0 | c-master3 | c-master3 | Quorum Standby | streaming |  1 |         0 |
++-------+-----------+-----------+----------------+-----------+----+-----------+
 ```
 
-
+### Затем стартуем patroni на воркер нодах 
+сначала все с индексом "1", затем с индексом "2",  
+и проверяем статус нод кластера:
 ```
-otus=# CREATE EXTENSION IF NOT EXISTS postgis;
-CREATE EXTENSION
-Time: 47254.808 ms (00:47.255)
-otus=# 
-otus=# SELECT origin, count(*), round(avg(ST_Distance(ST_MakePoint(longitude_1, latitude_1)::geography, ST_MakePoint(longitude_2, latitude_2)::geography))) AS distance FROM opensky WHERE origin != '' GROUP BY origin ORDER BY count(*) DESC LIMIT 10;
+root@c-worker1-1:~#  systemctl stаrt patroni
 
-
-
- origin | count  | distance 
---------+--------+----------
- KORD   | 745007 |  1547892
- KDFW   | 696702 |  1359825
- KATL   | 667286 |  1170196
- KDEN   | 582709 |  1289130
- KLAX   | 581952 |  2632101
- KLAS   | 447789 |  1338753
- KPHX   | 428558 |  1346816
- KSEA   | 412592 |  1759454
- KCLT   | 404612 |   880548
- VIDP   | 363074 |  1445852
-(10 rows)
-
-Time: 2408522.805 ms (40:08.523)
-```
-
-```
-otus=# SELECT origin, count(*), round(avg(ST_Distance(ST_MakePoint(longitude_1, latitude_1)::geography, ST_MakePoint(longitude_2, latitude_2)::geography))) AS distance FROM opensky WHERE firstseen >= '2019-09-01' AND firstseen < '2019-09-02' and origin != '' GROUP BY origin ORDER BY count(*) DESC LIMIT 10;
- origin | count | distance 
---------+-------+----------
- KORD   |   931 |  1699486
- KATL   |   853 |  1398233
- KLAX   |   746 |  2847843
- EDDF   |   687 |  2136078
- KDFW   |   633 |  1624383
- LFPG   |   632 |  2311505
- EGLL   |   623 |  3237910
- EHAM   |   603 |  2118953
- KDEN   |   602 |  1337483
- KLAS   |   585 |  1303276
-(10 rows)
-
-Time: 6733.077 ms (00:06.733)
+root@c-worker1-1:~# patronictl --config-file=/etc/patroni/config.yml list
++ Citus cluster: patroni -----------+----------------+-----------+----+-----------+
+| Group | Member      | Host        | Role           | State     | TL | Lag in MB |
++-------+-------------+-------------+----------------+-----------+----+-----------+
+|     0 | c-master1   | c-master1   | Leader         | running   |  1 |           |
+|     0 | c-master2   | c-master2   | Quorum Standby | streaming |  1 |         0 |
+|     0 | c-master3   | c-master3   | Quorum Standby | streaming |  1 |         0 |
+|     1 | c-worker1-1 | c-worker1-1 | Leader         | running   |  1 |           |
+|     1 | c-worker1-2 | c-worker1-2 | Quorum Standby | streaming |  1 |         0 |
+|     2 | c-worker2-1 | c-worker2-1 | Leader         | running   |  1 |           |
+|     2 | c-worker2-2 | c-worker2-2 | Quorum Standby | streaming |  1 |         0 |
+|     3 | c-worker3-1 | c-worker3-1 | Leader         | running   |  1 |           |
+|     3 | c-worker3-2 | c-worker3-2 | Quorum Standby | streaming |  1 |         0 |
++-------+-------------+-------------+----------------+-----------+----+-----------+
 ```
 
 
 
------------------------------------
+## Описание установки "ArenadataDB"
 
-```
-CREATE TABLE opensky
-(
-    callsign TEXT,
-    number TEXT,
-    icao24 TEXT,
-    registration TEXT,
-    typecode TEXT,
-    origin TEXT,
-    destination TEXT NULL,
-    firstseen TIMESTAMP WITH TIME ZONE NOT NULL,
-    lastseen TIMESTAMP WITH TIME ZONE NOT NULL,
-    day TIMESTAMP WITH TIME ZONE NOT NULL,
-    latitude_1 NUMERIC,
-    longitude_1 NUMERIC,
-    altitude_1 NUMERIC,
-    latitude_2 NUMERIC,
-    longitude_2 NUMERIC,
-    altitude_2 NUMERIC
-) WITH (appendoptimized=true, orientation=column, compresstype=zstd, compresslevel=1) DISTRIBUTED BY (callsign) PARTITION BY RANGE (firstseen) ( START (date '2018-12-31') INCLUSIVE END (date '2021-08-01') EXCLUSIVE EVERY (INTERVAL '1 month') );
-```
+## Сравнительное тестирование 
 
-```
-adb=# CREATE DATABASE otus;
-CREATE DATABASE
-adb=# \c otus 
-You are now connected to database "otus" as user "gpadmin".
-otus=# 
-otus=# 
-otus=# \dx
-                                List of installed extensions
-      Name       | Version |   Schema   |                    Description                    
------------------+---------+------------+---------------------------------------------------
- gp_exttable_fdw | 1.0     | pg_catalog | External Table Foreign Data Wrapper for Greenplum
- gp_toolkit      | 1.5     | gp_toolkit | various GPDB administrative views/functions
- plpgsql         | 1.0     | pg_catalog | PL/pgSQL procedural language
-(3 rows)
-
-otus=# CREATE EXTE
-EXTENSION       EXTERNAL TABLE  
-otus=# CREATE EXTENSION postgis;
-CREATE EXTENSION
-otus=# 
-otus=# 
-otus=# \dx
-                                    List of installed extensions
-      Name       | Version |   Schema   |                        Description                         
------------------+---------+------------+------------------------------------------------------------
- gp_exttable_fdw | 1.0     | pg_catalog | External Table Foreign Data Wrapper for Greenplum
- gp_toolkit      | 1.5     | gp_toolkit | various GPDB administrative views/functions
- plpgsql         | 1.0     | pg_catalog | PL/pgSQL procedural language
- postgis         | 3.3.2   | public     | PostGIS geometry and geography spatial types and functions
-(4 rows)
-
-otus=# 
-otus=# 
-otus=# CREATE TABLE opensky
-(
-    callsign TEXT,
-    number TEXT,
-    icao24 TEXT,
-    registration TEXT,
-    typecode TEXT,
-    origin TEXT,
-    destination TEXT NULL,
-    firstseen TIMESTAMP WITH TIME ZONE NOT NULL,
-    lastseen TIMESTAMP WITH TIME ZONE NOT NULL,
-    day TIMESTAMP WITH TIME ZONE NOT NULL,
-    latitude_1 NUMERIC,
-    longitude_1 NUMERIC,
-    altitude_1 NUMERIC,
-    latitude_2 NUMERIC,
-    longitude_2 NUMERIC,
-    altitude_2 NUMERIC
-) WITH (appendoptimized=true, orientation=column, compresstype=zstd, compresslevel=1) DISTRIBUTED BY (callsign) PARTITION BY RANGE (firstseen) ( START (date '2018-12-31') INCLUSIVE END (date '2021-08-01') EXCLUSIVE EVERY (INTERVAL '1 month') );
-CREATE TABLE
-otus=# 
-
-otus=# \dt
-                          List of relations
- Schema |       Name       |       Type        |  Owner  |  Storage  
---------+------------------+-------------------+---------+-----------
- public | opensky          | partitioned table | gpadmin | ao_column
- public | opensky_1_prt_1  | table             | gpadmin | ao_column
- public | opensky_1_prt_10 | table             | gpadmin | ao_column
- public | opensky_1_prt_11 | table             | gpadmin | ao_column
- public | opensky_1_prt_12 | table             | gpadmin | ao_column
- public | opensky_1_prt_13 | table             | gpadmin | ao_column
- public | opensky_1_prt_14 | table             | gpadmin | ao_column
- public | opensky_1_prt_15 | table             | gpadmin | ao_column
- public | opensky_1_prt_16 | table             | gpadmin | ao_column
- public | opensky_1_prt_17 | table             | gpadmin | ao_column
- public | opensky_1_prt_18 | table             | gpadmin | ao_column
- public | opensky_1_prt_19 | table             | gpadmin | ao_column
- public | opensky_1_prt_2  | table             | gpadmin | ao_column
- public | opensky_1_prt_20 | table             | gpadmin | ao_column
- public | opensky_1_prt_21 | table             | gpadmin | ao_column
- public | opensky_1_prt_22 | table             | gpadmin | ao_column
- public | opensky_1_prt_23 | table             | gpadmin | ao_column
- public | opensky_1_prt_24 | table             | gpadmin | ao_column
- public | opensky_1_prt_25 | table             | gpadmin | ao_column
- public | opensky_1_prt_26 | table             | gpadmin | ao_column
- public | opensky_1_prt_27 | table             | gpadmin | ao_column
- public | opensky_1_prt_28 | table             | gpadmin | ao_column
- public | opensky_1_prt_29 | table             | gpadmin | ao_column
- public | opensky_1_prt_3  | table             | gpadmin | ao_column
- public | opensky_1_prt_30 | table             | gpadmin | ao_column
- public | opensky_1_prt_31 | table             | gpadmin | ao_column
- public | opensky_1_prt_32 | table             | gpadmin | ao_column
- public | opensky_1_prt_4  | table             | gpadmin | ao_column
- public | opensky_1_prt_5  | table             | gpadmin | ao_column
- public | opensky_1_prt_6  | table             | gpadmin | ao_column
- public | opensky_1_prt_7  | table             | gpadmin | ao_column
- public | opensky_1_prt_8  | table             | gpadmin | ao_column
- public | opensky_1_prt_9  | table             | gpadmin | ao_column
- public | spatial_ref_sys  | table             | gpadmin | heap
-(34 rows)
-
-```
-
-```
-gpadmin@master2:~/csv$ date; for ii in flightlist_2019* flightlist_2020* flightlist_2021* ; do echo ${ii} ; zcat ${ii} | psql -h 192.168.0.221 -d otus -c "COPY opensky from stdin with delimiter ',' CSV HEADER" ; done ; date
-Wed Feb 26 20:30:08 UTC 2025
-flightlist_20190101_20190131.csv.gz
-COPY 2145469
-flightlist_20190201_20190228.csv.gz
-COPY 2005958
-flightlist_20190301_20190331.csv.gz
-COPY 2283154
-flightlist_20190401_20190430.csv.gz
-COPY 2375102
-flightlist_20190501_20190531.csv.gz
-COPY 2539167
-flightlist_20190601_20190630.csv.gz
-COPY 2660901
-flightlist_20190701_20190731.csv.gz
-COPY 2898415
-flightlist_20190801_20190831.csv.gz
-COPY 2990061
-flightlist_20190901_20190930.csv.gz
-COPY 2721743
-flightlist_20191001_20191031.csv.gz
-COPY 2946779
-flightlist_20191101_20191130.csv.gz
-COPY 2721437
-flightlist_20191201_20191231.csv.gz
-COPY 2701295
-flightlist_20200101_20200131.csv.gz
-COPY 2734791
-flightlist_20200201_20200229.csv.gz
-COPY 2648835
-flightlist_20200301_20200331.csv.gz
-COPY 2152157
-flightlist_20200401_20200430.csv.gz
-COPY 842905
-flightlist_20200501_20200531.csv.gz
-COPY 1088267
-flightlist_20200601_20200630.csv.gz
-COPY 1444224
-flightlist_20200701_20200731.csv.gz
-COPY 1905528
-flightlist_20200801_20200831.csv.gz
-COPY 2042040
-flightlist_20200901_20200930.csv.gz
-COPY 1930868
-flightlist_20201001_20201031.csv.gz
-COPY 1985145
-flightlist_20201101_20201130.csv.gz
-COPY 1825015
-flightlist_20201201_20201231.csv.gz
-COPY 1894751
-flightlist_20210101_20210131.csv.gz
-COPY 1783384
-flightlist_20210201_20210228.csv.gz
-COPY 1617845
-flightlist_20210301_20210331.csv.gz
-COPY 2079436
-flightlist_20210401_20210430.csv.gz
-COPY 2227362
-flightlist_20210501_20210530.csv.gz
-COPY 2278298
-flightlist_20210601_20210630.csv.gz
-COPY 2540487
-Wed Feb 26 20:42:27 UTC 2025
-```
-
-
-## README-install-adb.md
-
-[INSTALL ADB](README-install-adb.md)
+## Выводы и планы на будущее
