@@ -1,188 +1,377 @@
 ```
-otus=# EXPLAIN (ANALYZE, BUFFERS, VERBOSE) SELECT COUNT(*) FROM opensky;
-                                                                                                QUERY PLAN                                                                                                
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Aggregate  (cost=250.00..250.02 rows=1 width=8) (actual time=3256.949..3256.951 rows=1 loops=1)
+otus=# EXPLAIN (ANALYZE, BUFFERS, VERBOSE) SELECT COUNT(*) FROM opensky WHERE callsign IN ('UUEE', 'UUDD', 'UUWW');
+                                                                                      QUERY PLAN                                                                                       
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=250.00..250.02 rows=1 width=8) (actual time=1598.700..1598.702 rows=1 loops=1)
    Output: COALESCE((pg_catalog.sum(remote_scan.count))::bigint, '0'::bigint)
    Buffers: shared hit=100
-   ->  Custom Scan (Citus Adaptive)  (cost=0.00..0.00 rows=100000 width=8) (actual time=3256.909..3256.916 rows=32 loops=1)
+   ->  Custom Scan (Citus Adaptive)  (cost=0.00..0.00 rows=100000 width=8) (actual time=1598.673..1598.675 rows=2 loops=1)
          Output: remote_scan.count
-         Task Count: 32
-         Tuple data received from nodes: 256 bytes
-         Tasks Shown: One of 32
+         Task Count: 2
+         Tuple data received from nodes: 16 bytes
+         Tasks Shown: One of 2
          ->  Task
-               Query: SELECT count(*) AS count FROM public.opensky_104381 opensky WHERE true
+               Query: SELECT count(*) AS count FROM public.opensky_104396 opensky WHERE (callsign OPERATOR(pg_catalog.=) ANY ('{UUEE,UUDD,UUWW}'::text[]))
                Tuple data received from node: 8 bytes
                Node: host=c-worker2-1 port=5432 dbname=otus
-               ->  Finalize Aggregate  (cost=12578.60..12578.61 rows=1 width=8) (actual time=2661.237..2661.468 rows=1 loops=1)
+               ->  Aggregate  (cost=981.98..981.99 rows=1 width=8) (actual time=1429.238..1429.279 rows=1 loops=1)
                      Output: count(*)
-                     Buffers: shared hit=1510
-                     ->  Gather  (cost=12578.39..12578.60 rows=2 width=8) (actual time=2661.231..2661.461 rows=1 loops=1)
-                           Output: (PARTIAL count(*))
-                           Workers Planned: 2
-                           Workers Launched: 0
-                           Buffers: shared hit=1510
-                           ->  Partial Aggregate  (cost=11578.39..11578.40 rows=1 width=8) (actual time=2658.177..2658.201 rows=1 loops=1)
-                                 Output: PARTIAL count(*)
-                                 Buffers: shared hit=1510
-                                 ->  Parallel Append  (cost=0.00..7718.93 rows=1543785 width=0) (actual time=0.925..1987.164 rows=3705075 loops=1)
-                                       Buffers: shared hit=1510
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2018_12_106013 opensky_1  (cost=0.00..0.00 rows=130 width=0) (actual time=0.044..0.065 rows=130 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=15
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2019_01_106045 opensky_2  (cost=0.00..0.00 rows=67626 width=0) (actual time=0.142..7.602 rows=67626 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2019_02_106077 opensky_3  (cost=0.00..0.00 rows=63201 width=0) (actual time=0.136..7.008 rows=63201 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2019_03_106109 opensky_4  (cost=0.00..0.00 rows=71745 width=0) (actual time=0.165..7.845 rows=71745 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=31
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2019_04_106141 opensky_5  (cost=0.00..0.00 rows=74256 width=0) (actual time=0.109..8.662 rows=74256 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=31
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2019_05_106173 opensky_6  (cost=0.00..0.00 rows=79093 width=0) (actual time=0.165..8.960 rows=79093 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=33
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2019_06_106205 opensky_7  (cost=0.00..0.00 rows=83378 width=0) (actual time=0.188..10.616 rows=83378 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2019_07_106237 opensky_8  (cost=0.00..0.00 rows=91225 width=0) (actual time=0.237..10.633 rows=91225 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=35
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2019_08_106269 opensky_9  (cost=0.00..0.00 rows=94268 width=0) (actual time=0.152..11.636 rows=94268 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2019_09_106301 opensky_10  (cost=0.00..0.00 rows=90167 width=0) (actual time=0.168..10.257 rows=90167 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2019_10_106333 opensky_11  (cost=0.00..0.00 rows=92295 width=0) (actual time=0.149..11.320 rows=92295 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2019_11_106365 opensky_12  (cost=0.00..0.00 rows=84656 width=0) (actual time=0.206..9.533 rows=84656 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=32
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2019_12_106397 opensky_13  (cost=0.00..0.00 rows=86509 width=0) (actual time=0.249..11.495 rows=86509 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=32
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2020_01_106429 opensky_14  (cost=0.00..0.00 rows=85879 width=0) (actual time=0.222..16.510 rows=85879 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2020_02_106461 opensky_15  (cost=0.00..0.00 rows=84115 width=0) (actual time=0.251..16.172 rows=84115 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=29
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2020_03_106493 opensky_16  (cost=0.00..0.00 rows=67596 width=0) (actual time=0.252..13.177 rows=67596 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=29
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2020_04_106525 opensky_17  (cost=0.00..0.00 rows=26317 width=0) (actual time=0.158..5.235 rows=26317 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=27
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2020_05_106557 opensky_18  (cost=0.00..0.00 rows=34510 width=0) (actual time=0.158..10.043 rows=34510 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=28
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2020_06_106589 opensky_19  (cost=0.00..0.00 rows=45761 width=0) (actual time=0.169..24.437 rows=45761 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=28
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2020_07_106621 opensky_20  (cost=0.00..0.00 rows=60918 width=0) (actual time=0.248..13.089 rows=60918 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2020_08_106653 opensky_21  (cost=0.00..0.00 rows=65219 width=0) (actual time=0.362..14.120 rows=65219 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2020_09_106685 opensky_22  (cost=0.00..0.00 rows=60376 width=0) (actual time=0.491..13.323 rows=60376 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=31
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2020_10_106717 opensky_23  (cost=0.00..0.00 rows=63058 width=0) (actual time=0.229..29.868 rows=63058 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=32
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2020_11_106749 opensky_24  (cost=0.00..0.00 rows=58425 width=0) (actual time=0.225..11.650 rows=58425 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=29
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2020_12_106781 opensky_25  (cost=0.00..0.00 rows=61086 width=0) (actual time=0.290..40.670 rows=61086 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=29
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2021_01_106813 opensky_26  (cost=0.00..0.00 rows=57250 width=0) (actual time=0.252..11.812 rows=57250 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=29
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2021_02_106845 opensky_27  (cost=0.00..0.00 rows=51676 width=0) (actual time=0.225..22.514 rows=51676 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=29
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2021_03_106877 opensky_28  (cost=0.00..0.00 rows=65957 width=0) (actual time=0.222..29.799 rows=65957 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2021_04_106909 opensky_29  (cost=0.00..0.00 rows=70430 width=0) (actual time=0.231..62.510 rows=70430 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2021_05_106941 opensky_30  (cost=0.00..0.00 rows=72549 width=0) (actual time=0.223..30.225 rows=72549 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2021_06_106973 opensky_31  (cost=0.00..0.00 rows=80988 width=0) (actual time=0.357..49.860 rows=80988 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2021_07_107005 opensky_32  (cost=0.00..0.00 rows=90741 width=0) (actual time=0.386..91.227 rows=90741 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=19
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2021_08_107037 opensky_33  (cost=0.00..0.00 rows=89015 width=0) (actual time=0.339..37.656 rows=89015 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=32
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2021_09_107069 opensky_34  (cost=0.00..0.00 rows=84741 width=0) (actual time=0.380..48.167 rows=84741 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=34
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2021_10_107101 opensky_35  (cost=0.00..0.00 rows=86184 width=0) (actual time=0.350..81.123 rows=86184 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=31
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2021_11_107133 opensky_36  (cost=0.00..0.00 rows=78571 width=0) (actual time=0.289..55.497 rows=78571 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=29
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2021_12_107165 opensky_37  (cost=0.00..0.00 rows=80927 width=0) (actual time=0.244..16.072 rows=80927 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=32
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2022_01_107197 opensky_38  (cost=0.00..0.00 rows=75347 width=0) (actual time=0.410..18.104 rows=75347 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2022_02_107229 opensky_39  (cost=0.00..0.00 rows=72206 width=0) (actual time=0.307..17.331 rows=72206 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2022_03_107261 opensky_40  (cost=0.00..0.00 rows=87419 width=0) (actual time=0.656..22.843 rows=87419 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=32
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2022_04_107293 opensky_41  (cost=0.00..0.00 rows=89599 width=0) (actual time=0.326..29.444 rows=89599 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2022_05_107325 opensky_42  (cost=0.00..0.00 rows=97274 width=0) (actual time=0.415..23.387 rows=97274 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=36
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2022_06_107357 opensky_43  (cost=0.00..0.00 rows=101534 width=0) (actual time=0.414..26.798 rows=101534 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=33
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2022_07_107389 opensky_44  (cost=0.00..0.00 rows=103884 width=0) (actual time=0.370..26.793 rows=103884 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=31
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2022_08_107421 opensky_45  (cost=0.00..0.00 rows=103634 width=0) (actual time=0.432..25.203 rows=103634 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=18
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2022_09_107453 opensky_46  (cost=0.00..0.00 rows=98594 width=0) (actual time=0.359..26.320 rows=98594 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2022_10_107485 opensky_47  (cost=0.00..0.00 rows=99792 width=0) (actual time=0.389..25.516 rows=99792 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2022_11_107517 opensky_48  (cost=0.00..0.00 rows=90078 width=0) (actual time=0.432..28.789 rows=90078 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=30
-                                       ->  Custom Scan (ColumnarScan) on public.opensky_p2022_12_107549 opensky_49  (cost=0.00..0.00 rows=84876 width=0) (actual time=0.910..21.468 rows=84876 loops=1)
-                                             Columnar Projected Columns: <columnar optimized out all columns>
-                                             Buffers: shared hit=84
-                                       ->  Seq Scan on public.opensky_p2023_01_105981 opensky_50  (cost=0.00..0.00 rows=1 width=0) (actual time=0.014..0.014 rows=0 loops=1)
-                   Planning Time: 64.882 ms
-                   Execution Time: 2662.910 ms
+                     Buffers: shared hit=8885
+                     ->  Append  (cost=0.00..977.64 rows=1739 width=0) (actual time=370.742..1429.244 rows=11 loops=1)
+                           Buffers: shared hit=8885
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2018_12_106028 opensky_1  (cost=0.00..0.08 rows=3 width=0) (actual time=4.394..4.395 rows=0 loops=1)
+                                 Filter: (opensky_1.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 122
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=68
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2019_01_106060 opensky_2  (cost=0.00..16.75 rows=37 width=0) (actual time=27.532..27.533 rows=0 loops=1)
+                                 Filter: (opensky_2.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 66266
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=181
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2019_02_106092 opensky_3  (cost=0.00..15.60 rows=35 width=0) (actual time=22.817..22.818 rows=0 loops=1)
+                                 Filter: (opensky_3.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 61697
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=179
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2019_03_106124 opensky_4  (cost=0.00..17.62 rows=37 width=0) (actual time=29.680..29.680 rows=0 loops=1)
+                                 Filter: (opensky_4.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 69911
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=182
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2019_04_106156 opensky_5  (cost=0.00..18.60 rows=39 width=0) (actual time=36.406..36.407 rows=0 loops=1)
+                                 Filter: (opensky_5.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 73518
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=186
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2019_05_106188 opensky_6  (cost=0.00..19.63 rows=40 width=0) (actual time=29.217..29.218 rows=0 loops=1)
+                                 Filter: (opensky_6.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 77599
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=187
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2019_06_106220 opensky_7  (cost=0.00..20.57 rows=40 width=0) (actual time=25.455..25.455 rows=0 loops=1)
+                                 Filter: (opensky_7.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 81421
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=194
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2019_07_106252 opensky_8  (cost=0.00..22.48 rows=43 width=0) (actual time=27.160..27.160 rows=0 loops=1)
+                                 Filter: (opensky_8.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 88819
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=199
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2019_08_106284 opensky_9  (cost=0.00..23.24 rows=43 width=0) (actual time=35.124..35.125 rows=0 loops=1)
+                                 Filter: (opensky_9.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 91574
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=202
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2019_09_106316 opensky_10  (cost=0.00..22.29 rows=42 width=0) (actual time=34.002..34.002 rows=0 loops=1)
+                                 Filter: (opensky_10.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 87845
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=197
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2019_10_106348 opensky_11  (cost=0.00..22.71 rows=41 width=0) (actual time=31.271..31.271 rows=0 loops=1)
+                                 Filter: (opensky_11.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 89595
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=200
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2019_11_106380 opensky_12  (cost=0.00..21.27 rows=42 width=0) (actual time=28.601..28.601 rows=0 loops=1)
+                                 Filter: (opensky_12.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 83770
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=194
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2019_12_106412 opensky_13  (cost=0.00..21.53 rows=42 width=0) (actual time=25.612..25.612 rows=0 loops=1)
+                                 Filter: (opensky_13.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 84880
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=195
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2020_01_106444 opensky_14  (cost=0.00..21.79 rows=42 width=0) (actual time=13.443..18.262 rows=2 loops=1)
+                                 Filter: (opensky_14.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 84748
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=195
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2020_02_106476 opensky_15  (cost=0.00..20.85 rows=41 width=0) (actual time=17.363..17.363 rows=0 loops=1)
+                                 Filter: (opensky_15.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 81865
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=196
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2020_03_106508 opensky_16  (cost=0.00..16.93 rows=32 width=0) (actual time=14.426..14.427 rows=0 loops=1)
+                                 Filter: (opensky_16.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 66636
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=182
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2020_04_106540 opensky_17  (cost=0.00..6.49 rows=18 width=0) (actual time=5.790..5.790 rows=0 loops=1)
+                                 Filter: (opensky_17.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 26100
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=149
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2020_05_106572 opensky_18  (cost=0.00..8.18 rows=20 width=0) (actual time=7.785..7.786 rows=0 loops=1)
+                                 Filter: (opensky_18.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 32854
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 1
+                                 Buffers: shared hit=153
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2020_06_106604 opensky_19  (cost=0.00..11.20 rows=26 width=0) (actual time=12.603..12.603 rows=0 loops=1)
+                                 Filter: (opensky_19.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 44977
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=164
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2020_07_106636 opensky_20  (cost=0.00..14.79 rows=31 width=0) (actual time=9.458..20.241 rows=1 loops=1)
+                                 Filter: (opensky_20.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 58246
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=173
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2020_08_106668 opensky_21  (cost=0.00..16.13 rows=33 width=0) (actual time=9.283..24.849 rows=2 loops=1)
+                                 Filter: (opensky_21.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 63320
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=182
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2020_09_106700 opensky_22  (cost=0.00..15.18 rows=31 width=0) (actual time=23.483..23.483 rows=0 loops=1)
+                                 Filter: (opensky_22.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 59631
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=172
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2020_10_106732 opensky_23  (cost=0.00..15.21 rows=30 width=0) (actual time=32.276..32.276 rows=0 loops=1)
+                                 Filter: (opensky_23.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 60622
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=178
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2020_11_106764 opensky_24  (cost=0.00..14.21 rows=30 width=0) (actual time=38.658..38.659 rows=0 loops=1)
+                                 Filter: (opensky_24.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 56679
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=171
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2020_12_106796 opensky_25  (cost=0.00..14.65 rows=30 width=0) (actual time=34.112..34.112 rows=0 loops=1)
+                                 Filter: (opensky_25.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 58275
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=173
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2021_01_106828 opensky_26  (cost=0.00..13.68 rows=30 width=0) (actual time=22.316..22.316 rows=0 loops=1)
+                                 Filter: (opensky_26.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 55113
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=173
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2021_02_106860 opensky_27  (cost=0.00..12.37 rows=28 width=0) (actual time=24.432..24.433 rows=0 loops=1)
+                                 Filter: (opensky_27.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 50023
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=167
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2021_03_106892 opensky_28  (cost=0.00..16.08 rows=32 width=0) (actual time=30.782..30.783 rows=0 loops=1)
+                                 Filter: (opensky_28.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 64912
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=180
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2021_04_106924 opensky_29  (cost=0.00..16.91 rows=34 width=0) (actual time=25.899..27.808 rows=1 loops=1)
+                                 Filter: (opensky_29.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 68482
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=181
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2021_05_106956 opensky_30  (cost=0.00..17.26 rows=33 width=0) (actual time=22.159..22.159 rows=0 loops=1)
+                                 Filter: (opensky_30.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 69827
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=182
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2021_06_106988 opensky_31  (cost=0.00..19.17 rows=36 width=0) (actual time=16.838..16.838 rows=0 loops=1)
+                                 Filter: (opensky_31.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 78261
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=189
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2021_07_107020 opensky_32  (cost=0.00..42.66 rows=38 width=0) (actual time=19.078..19.078 rows=0 loops=1)
+                                 Filter: (opensky_32.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 86786
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=130
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2021_08_107052 opensky_33  (cost=0.00..21.41 rows=39 width=0) (actual time=42.436..44.973 rows=1 loops=1)
+                                 Filter: (opensky_33.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 86453
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=197
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2021_09_107084 opensky_34  (cost=0.00..20.58 rows=37 width=0) (actual time=35.944..35.944 rows=0 loops=1)
+                                 Filter: (opensky_34.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 83163
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=195
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2021_10_107116 opensky_35  (cost=0.00..20.58 rows=36 width=0) (actual time=37.647..37.647 rows=0 loops=1)
+                                 Filter: (opensky_35.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 82875
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=194
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2021_11_107148 opensky_36  (cost=0.00..18.91 rows=35 width=0) (actual time=43.519..43.519 rows=0 loops=1)
+                                 Filter: (opensky_36.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 76825
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=188
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2021_12_107180 opensky_37  (cost=0.00..19.37 rows=36 width=0) (actual time=35.882..35.882 rows=0 loops=1)
+                                 Filter: (opensky_37.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 78525
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=189
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2022_01_107212 opensky_38  (cost=0.00..18.50 rows=35 width=0) (actual time=29.297..29.298 rows=0 loops=1)
+                                 Filter: (opensky_38.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 74590
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=187
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2022_02_107244 opensky_39  (cost=0.00..17.80 rows=34 width=0) (actual time=28.356..28.356 rows=0 loops=1)
+                                 Filter: (opensky_39.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 71878
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=186
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2022_03_107276 opensky_40  (cost=0.00..21.25 rows=37 width=0) (actual time=34.269..34.270 rows=0 loops=1)
+                                 Filter: (opensky_40.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 85571
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=195
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2022_04_107308 opensky_41  (cost=0.00..21.49 rows=39 width=0) (actual time=44.139..44.139 rows=0 loops=1)
+                                 Filter: (opensky_41.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 87080
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=198
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2022_05_107340 opensky_42  (cost=0.00..23.51 rows=42 width=0) (actual time=17.422..22.051 rows=1 loops=1)
+                                 Filter: (opensky_42.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 95164
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=208
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2022_06_107372 opensky_43  (cost=0.00..24.27 rows=41 width=0) (actual time=41.478..41.479 rows=0 loops=1)
+                                 Filter: (opensky_43.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 98160
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=207
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2022_07_107404 opensky_44  (cost=0.00..25.06 rows=42 width=0) (actual time=47.014..47.015 rows=0 loops=1)
+                                 Filter: (opensky_44.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 101377
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=209
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2022_08_107436 opensky_45  (cost=0.00..49.91 rows=43 width=0) (actual time=51.602..51.603 rows=0 loops=1)
+                                 Filter: (opensky_45.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 100848
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=143
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2022_09_107468 opensky_46  (cost=0.00..23.92 rows=42 width=0) (actual time=32.460..46.060 rows=2 loops=1)
+                                 Filter: (opensky_46.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 97101
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=205
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2022_10_107500 opensky_47  (cost=0.00..24.55 rows=42 width=0) (actual time=42.843..42.843 rows=0 loops=1)
+                                 Filter: (opensky_47.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 99695
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=205
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2022_11_107532 opensky_48  (cost=0.00..21.42 rows=41 width=0) (actual time=23.123..38.101 rows=1 loops=1)
+                                 Filter: (opensky_48.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 87560
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=196
+                           ->  Custom Scan (ColumnarScan) on public.opensky_p2022_12_107564 opensky_49  (cost=0.00..40.33 rows=38 width=0) (actual time=35.369..35.369 rows=0 loops=1)
+                                 Filter: (opensky_49.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Rows Removed by Filter: 82396
+                                 Columnar Projected Columns: callsign
+                                 Columnar Chunk Group Filters: (callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                                 Columnar Chunk Groups Removed by Filter: 0
+                                 Buffers: shared hit=129
+                           ->  Seq Scan on public.opensky_p2023_01_105996 opensky_50  (cost=0.00..0.00 rows=1 width=0) (actual time=0.013..0.014 rows=0 loops=1)
+                                 Filter: (opensky_50.callsign = ANY ('{UUEE,UUDD,UUWW}'::text[]))
+                   Planning Time: 125.513 ms
+                   Execution Time: 1445.408 ms
          Buffers: shared hit=100
  Planning:
    Buffers: shared hit=4
- Planning Time: 1.787 ms
- Execution Time: 3257.104 ms
-(180 rows)
+ Planning Time: 0.663 ms
+ Execution Time: 1598.845 ms
+(369 rows)
 
-Time: 3283.674 ms (00:03.284)
+Time: 1611.069 ms (00:01.611)
 ```

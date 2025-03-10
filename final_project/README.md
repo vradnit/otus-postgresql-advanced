@@ -1421,6 +1421,7 @@ ANALYZE
 
 ## **Сравнительное тестирование**
  
+
 ### **1) Общее кол-во полетов**  
 
 **Citus**  [explain](explains/citus-select-all.md)
@@ -1444,6 +1445,7 @@ otus=# SELECT COUNT(*) FROM opensky;
 
 Time: 1919.123 ms (00:01.919)
 ```
+
 
 ### **2) Кол-во полетов "callsign IN ('UUEE', 'UUDD', 'UUWW')"**
 
@@ -1470,20 +1472,181 @@ Time: 1382.225 ms (00:01.382
 ```
 
 
+### **3) ТОП 10 аэропортов с максимальным кол-вом полетов**
+
+**Citus**  [explain](explains/citus-select-top-airport.md)
+```
+otus=# SELECT origin, COUNT(*) FROM opensky WHERE origin != '' GROUP BY origin ORDER BY count(*) DESC limit 10;
+ origin |  count  
+--------+---------
+ KORD   | 1278958
+ KATL   | 1199212
+ KDFW   | 1180078
+ KDEN   | 1034742
+ KLAX   |  979713
+ KLAS   |  814541
+ KPHX   |  736719
+ KCLT   |  727478
+ KSEA   |  705101
+ KJFK   |  648324
+(10 rows)
+
+Time: 4378.820 ms (00:04.379)
+```
+
+**ArenadataDB**  [explain](explains/adb-select-top-airport.md)
+```
+otus=# SELECT origin, COUNT(*) FROM opensky WHERE origin != '' GROUP BY origin ORDER BY count(*) DESC limit 10;
+ origin |  count  
+--------+---------
+ KORD   | 1278958
+ KATL   | 1199212
+ KDFW   | 1180078
+ KDEN   | 1034742
+ KLAX   |  979713
+ KLAS   |  814541
+ KPHX   |  736719
+ KCLT   |  727478
+ KSEA   |  705101
+ KJFK   |  648324
+(10 rows)
+
+Time: 4103.111 ms (00:04.103)
+```
 
 
+### **4) ТОП 10 аэропортов с максимальным кол-вом полетов и с расчетом суммарного полетного расстояния**
+
+**Citus**  [explain](explains/citus-select-top-airport-with-distance.md)
+```
+otus=# SELECT origin, count(*), round(avg(ST_Distance(ST_MakePoint(longitude_1, latitude_1)::geography, ST_MakePoint(longitude_2, latitude_2)::geography))) AS distance FROM opensky WHERE origin != '' GROUP BY origin ORDER BY count(*) DESC LIMIT 10;
+ origin |  count  | distance 
+--------+---------+----------
+ KORD   | 1278958 |  1574550
+ KATL   | 1199212 |  1205488
+ KDFW   | 1180078 |  1375065
+ KDEN   | 1034742 |  1307201
+ KLAX   |  979713 |  2623384
+ KLAS   |  814541 |  1321407
+ KPHX   |  736719 |  1344931
+ KCLT   |  727478 |   886753
+ KSEA   |  705101 |  1785279
+ KJFK   |  648324 |  2900486
+(10 rows)
+
+Time: 110239.651 ms (01:50.240)
+```
+
+**ArenadataDB** [explain](explains/adb-select-top-airport-with-distance.md)
+```
+otus=# SELECT origin, count(*), round(avg(ST_Distance(ST_MakePoint(longitude_1, latitude_1)::geography, ST_MakePoint(longitude_2, latitude_2)::geography))) AS distance FROM opensky WHERE origin != '' GROUP BY origin ORDER BY count(*) DESC LIMIT 10;
+ origin |  count  | distance 
+--------+---------+----------
+ KORD   | 1278958 |  1574550
+ KATL   | 1199212 |  1205488
+ KDFW   | 1180078 |  1375065
+ KDEN   | 1034742 |  1307201
+ KLAX   |  979713 |  2623384
+ KLAS   |  814541 |  1321407
+ KPHX   |  736719 |  1344931
+ KCLT   |  727478 |   886753
+ KSEA   |  705101 |  1785279
+ KJFK   |  648324 |  2900486
+(10 rows)
+
+Time: 78939.973 ms (01:18.940)
+```
+
+### **5) ТОП 10 аэропортов с максимальным кол-вом полетов и с расчетом суммарного полетного расстояния за 2019-09-01**
+
+**Citus**  [explain](explains/citus-select-top-airport-with-distance-month.md)
+```
+otus=# SELECT origin, count(*), round(avg(ST_Distance(ST_MakePoint(longitude_1, latitude_1)::geography, ST_MakePoint(longitude_2, latitude_2)::geography))) AS distance FROM opensky WHERE firstseen >= '2019-09-01' AND firstseen < '2019-09-02' and origin != '' GROUP BY origin ORDER BY count(*) DESC LIMIT 10;
+ origin | count | distance 
+--------+-------+----------
+ KORD   |   931 |  1699486
+ KATL   |   853 |  1398233
+ KLAX   |   746 |  2847843
+ EDDF   |   687 |  2136078
+ KDFW   |   633 |  1624383
+ LFPG   |   632 |  2311505
+ EGLL   |   623 |  3237910
+ EHAM   |   603 |  2118953
+ KDEN   |   602 |  1337483
+ KLAS   |   585 |  1303276
+(10 rows)
+
+Time: 875.814 ms
+```
+
+**ArenadataDB**  [explain](explains/adb-select-top-airport-with-distance-month.md)
+```
+otus=# SELECT origin, count(*), round(avg(ST_Distance(ST_MakePoint(longitude_1, latitude_1)::geography, ST_MakePoint(longitude_2, latitude_2)::geography))) AS distance FROM opensky WHERE firstseen >= '2019-09-01' AND firstseen < '2019-09-02' and origin != '' GROUP BY origin ORDER BY count(*) DESC LIMIT 10;
+ origin | count | distance 
+--------+-------+----------
+ KORD   |   931 |  1699486
+ KATL   |   853 |  1398233
+ KLAX   |   746 |  2847843
+ EDDF   |   687 |  2136078
+ KDFW   |   633 |  1624383
+ LFPG   |   632 |  2311505
+ EGLL   |   623 |  3237910
+ EHAM   |   603 |  2118953
+ KDEN   |   602 |  1337483
+ KLAS   |   585 |  1303276
+(10 rows)
+
+Time: 513.226 ms
+```
 
 
+### **6) Суммарное растояние за все время наблюдения**
+
+**Citus**  [explain](explains/citus-select-sum-all-distance.md)
+```
+otus=# SELECT sum(ST_Distance(ST_MakePoint(longitude_1, latitude_1)::geography, ST_MakePoint(longitude_2, latitude_2)::geography))/1000 AS distance FROM opensky ;
+     distance      
+-------------------
+ 119783942240.7983
+(1 row)
+
+Time: 110386.036 ms (01:50.386)
+```
+
+**ArenadataDB**  [explain](explains/adb-select-sum-all-distance.md)
+```
+otus=# SELECT sum(ST_Distance(ST_MakePoint(longitude_1, latitude_1)::geography, ST_MakePoint(longitude_2, latitude_2)::geography))/1000 AS distance FROM opensky ;
+      distance      
+--------------------
+ 119783942240.79976
+(1 row)
+
+Time: 95862.004 ms (01:35.862)
+```
 
 
+## Просмотр дашбордов мониоринга
 
+Citus - cтатистика при загрузке датасета
+![Citus - cтатистика при загрузке датасета](images/citus-monitor-uploads.png)
 
+ArenadataDB - cтатистика при загрузке датасета
+![ArenadataDB - cтатистика при загрузке датасета](images/adb-monitor-uploads.png)
 
+Citus - cтатистика с одной из воркер нод
+![Citus - cтатистика с одной из воркер нод](images/citus-monitor-nodes.png)
 
+ArenadataDB - cтатистика с одной из воркер нод
+![ArenadataDB - cтатистика с одной из воркер нод](images/adb-monitor-nodes.png)
 
+Citus - cтатистика postgres-exporter
+![Citus - cтатистика postgres-exporter 1](images/citus-monitoring-after-test-1.png)
+![Citus - cтатистика postgres-exporter 2](images/citus-monitoring-after-test-2.png)
 
-
-
+ArenadataDB - monitoring 
+![ArenadataDB - monitoring 1](images/adb-monitoring-after-test-1.png)
+![ArenadataDB - monitoring 2](images/adb-monitoring-after-test-2.png)
+![ArenadataDB - monitoring 3](images/adb-monitoring-after-test-3.png)
 
 
 
