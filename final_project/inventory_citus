@@ -1,0 +1,31 @@
+[all]
+c-master1  ansible_host=192.168.0.231
+c-master2  ansible_host=192.168.0.232
+c-master3  ansible_host=192.168.0.233
+
+c-worker1-1  ansible_host=192.168.0.234
+c-worker1-2  ansible_host=192.168.0.235
+c-worker2-1  ansible_host=192.168.0.236
+c-worker2-2  ansible_host=192.168.0.237
+c-worker3-1  ansible_host=192.168.0.238
+c-worker3-2  ansible_host=192.168.0.239
+
+[master]
+c-master1
+c-master2
+c-master3
+
+[worker]
+c-worker1-1
+c-worker1-2
+c-worker2-1
+c-worker2-2
+c-worker3-1
+c-worker3-2
+
+
+
+[all:vars]
+ansible_connection=ssh
+ansible_user=root
+ansible_ssh_private_key_file=/home/voronov/.ssh/id_rsa_test
