@@ -26,7 +26,7 @@ Cравнить производительность аналитических 
 ## **Описание установки "кластера Citus на базе Patoni"**
 
 ### Схема стенда "кластера Citus на базе Patoni"
-![Схема стенда кластера Citus на базе Patoni](images/schema_citus_patroni.png "Схема стенда кластера Citus на базе Patoni")
+![Схема стенда кластера Citus на базе Patoni](images/citus.png "Схема стенда кластера Citus на базе Patoni")
 
 ### На все ноды в /etc/hosts добавляем
 ```
@@ -298,7 +298,7 @@ root@c-worker1-1:~# patronictl --config-file=/etc/patroni/config.yml list
 ## **Описание установки кластера ArenadataDB**
 
 ### Схема стенда кластера ArenadataDB
-![Схема стенда кластера ArenadataDB](images/schema_arenadatadb.png "Схема стенда кластера ArenadataDB")
+![Схема стенда кластера ArenadataDB](images/adb.png "Схема стенда кластера ArenadataDB")
 
 ### Установка Arenadata Cluster Manager (ADCM)  
 Установку ArenadataDB будем производить с помощью инструмента ADCM.  
